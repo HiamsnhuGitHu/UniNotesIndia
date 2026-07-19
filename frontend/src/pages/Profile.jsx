@@ -5,11 +5,11 @@ import { User, Mail, Smartphone, MapPin, GraduationCap, Calendar, Bookmark, Uplo
 
 export default function Profile() {
   const { user } = useAuth();
-  
+
   // Lists
   const [bookmarks, setBookmarks] = useState([]);
   const [uploads, setUploads] = useState([]);
-  
+
   const [loading, setLoading] = useState(false);
   const [alert, setAlert] = useState({ type: '', text: '' });
 
@@ -24,7 +24,7 @@ export default function Profile() {
         api.get('/api/notes/search') // Fetch approved notes to filter, or fetch all notes
       ]);
       setBookmarks(bmarkRes.data);
-      
+
       // Filter user uploads
       const userUploads = notesRes.data.filter(n => n.uploadedBy?.id === user.id);
       setUploads(userUploads);
@@ -50,12 +50,11 @@ export default function Profile() {
 
   return (
     <div class="space-y-8">
-      
+
       {/* Alert Banner */}
       {alert.text && (
-        <div class={`fixed top-20 right-6 z-50 px-4 py-3 rounded-lg border text-xs shadow-xl ${
-          alert.type === 'success' ? 'bg-emerald-500/10 border-emerald-500/30 text-emerald-400' : 'bg-rose-500/10 border-rose-500/30 text-rose-400'
-        }`}>
+        <div class={`fixed top-20 right-6 z-50 px-4 py-3 rounded-lg border text-xs shadow-xl ${alert.type === 'success' ? 'bg-emerald-500/10 border-emerald-500/30 text-emerald-400' : 'bg-rose-500/10 border-rose-500/30 text-rose-400'
+          }`}>
           <span>{alert.text}</span>
         </div>
       )}
@@ -63,12 +62,12 @@ export default function Profile() {
       {/* User Information Profile Card */}
       <div class="glass-panel border border-white/10 rounded-2xl p-6 sm:p-8 shadow-xl relative overflow-hidden">
         <div class="absolute -top-32 -left-32 w-72 h-72 bg-blue-500/10 rounded-full blur-3xl"></div>
-        
+
         <div class="flex flex-col sm:flex-row items-center gap-6 relative z-10">
           <div class="h-20 w-20 rounded-2xl bg-blue-600/10 text-blue-400 border border-blue-500/20 flex items-center justify-center font-display font-extrabold text-3xl shrink-0">
             {user?.fullName?.charAt(0).toUpperCase()}
           </div>
-          
+
           <div class="text-center sm:text-left space-y-1">
             <h2 class="font-display font-extrabold text-white text-2xl">{user?.fullName}</h2>
             <p class="text-xs text-slate-400 font-mono">@{user?.username} ({user?.role?.replace('ROLE_', '')})</p>
@@ -100,7 +99,7 @@ export default function Profile() {
 
       {/* Tabs / Side by Side lists */}
       <div class="grid grid-cols-1 lg:grid-cols-2 gap-8">
-        
+
         {/* Bookmarks Column */}
         <div class="space-y-4">
           <h3 class="font-display font-bold text-white text-lg flex items-center gap-2">
@@ -161,13 +160,12 @@ export default function Profile() {
                     <h4 class="text-xs font-bold text-white truncate">{note.title}</h4>
                     <p class="text-[10px] text-slate-400 truncate mt-0.5">{note.subject?.name} • {note.noteType}</p>
                   </div>
-                  
+
                   <div class="flex items-center gap-2 shrink-0">
-                    <div class={`flex items-center gap-1 text-[10px] px-2 py-0.5 rounded font-semibold ${
-                      note.status === 'APPROVED' 
-                        ? 'bg-emerald-500/10 text-emerald-400 border border-emerald-500/20' 
+                    <div class={`flex items-center gap-1 text-[10px] px-2 py-0.5 rounded font-semibold ${note.status === 'APPROVED'
+                        ? 'bg-emerald-500/10 text-emerald-400 border border-emerald-500/20'
                         : 'bg-amber-500/10 text-amber-400 border border-amber-500/20'
-                    }`}>
+                      }`}>
                       {note.status === 'APPROVED' ? <CheckCircle2 size={10} /> : <Clock size={10} />}
                       <span>{note.status}</span>
                     </div>
