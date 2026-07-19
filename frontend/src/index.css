@@ -1,0 +1,71 @@
+@import "tailwindcss";
+
+@theme {
+  --font-sans: 'Inter', system-ui, -apple-system, sans-serif;
+  --font-display: 'Outfit', system-ui, -apple-system, sans-serif;
+}
+
+/* Custom premium scrollbar */
+::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+::-webkit-scrollbar-track {
+  background: #020617;
+}
+::-webkit-scrollbar-thumb {
+  background: #1e293b;
+  border-radius: 9999px;
+}
+::-webkit-scrollbar-thumb:hover {
+  background: #334155;
+}
+
+/* Glassmorphism theme */
+.glass-panel {
+  background: rgba(15, 23, 42, 0.45);
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+}
+
+.glass-panel-hover {
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+.glass-panel-hover:hover {
+  background: rgba(15, 23, 42, 0.6);
+  border-color: rgba(96, 165, 250, 0.3);
+  box-shadow: 0 10px 30px -10px rgba(96, 165, 250, 0.15);
+  transform: translateY(-2px);
+}
+
+.glass-card-glow {
+  background: linear-gradient(135deg, rgba(30, 41, 59, 0.4) 0%, rgba(15, 23, 42, 0.6) 100%);
+  border: 1px solid rgba(167, 139, 250, 0.15);
+  backdrop-filter: blur(12px);
+}
+
+.text-glow-blue {
+  text-shadow: 0 0 20px rgba(96, 165, 250, 0.4);
+}
+
+.text-glow-purple {
+  text-shadow: 0 0 20px rgba(167, 139, 250, 0.4);
+}
+
+.bg-radial-grid {
+  background-image: radial-gradient(circle at 50% 50%, rgba(30, 27, 75, 0.3) 0%, rgba(2, 6, 23, 0) 70%);
+}
+
+.pulse-glow {
+  animation: pulse-glow-keyframes 3s infinite alternate;
+}
+
+@keyframes pulse-glow-keyframes {
+  0% {
+    box-shadow: 0 0 15px rgba(96, 165, 250, 0.2);
+  }
+  100% {
+    box-shadow: 0 0 30px rgba(167, 139, 250, 0.4);
+  }
+}
