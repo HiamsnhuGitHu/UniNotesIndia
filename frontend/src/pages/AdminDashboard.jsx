@@ -353,28 +353,40 @@ export default function AdminDashboard() {
       {activeTab === 'stats' && (
         <div class="space-y-6">
           <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
-            <div class="glass-panel border border-white/5 rounded-2xl p-6 flex items-center gap-4">
+            <div 
+              onClick={() => setActiveTab('users')}
+              class="glass-panel border border-white/5 rounded-2xl p-6 flex items-center gap-4 cursor-pointer hover:border-blue-500/40 hover:bg-slate-900/20 hover:scale-[1.02] active:scale-[0.98] transition-all duration-300"
+            >
               <div class="p-3 bg-blue-600/10 text-blue-400 rounded-xl border border-blue-500/20"><Users size={20} /></div>
               <div>
                 <p class="text-[10px] text-slate-400 uppercase font-semibold">Total Accounts</p>
                 <h3 class="text-xl font-extrabold text-white font-display mt-0.5">{stats.totalUsers}</h3>
               </div>
             </div>
-            <div class="glass-panel border border-white/5 rounded-2xl p-6 flex items-center gap-4">
+            <div 
+              onClick={() => setActiveTab('directories')}
+              class="glass-panel border border-white/5 rounded-2xl p-6 flex items-center gap-4 cursor-pointer hover:border-purple-500/40 hover:bg-slate-900/20 hover:scale-[1.02] active:scale-[0.98] transition-all duration-300"
+            >
               <div class="p-3 bg-purple-600/10 text-purple-400 rounded-xl border border-purple-500/20"><School size={20} /></div>
               <div>
                 <p class="text-[10px] text-slate-400 uppercase font-semibold">Universities</p>
                 <h3 class="text-xl font-extrabold text-white font-display mt-0.5">{stats.totalUniversities}</h3>
               </div>
             </div>
-            <div class="glass-panel border border-white/5 rounded-2xl p-6 flex items-center gap-4">
+            <div 
+              onClick={() => setActiveTab('approvals')}
+              class="glass-panel border border-white/5 rounded-2xl p-6 flex items-center gap-4 cursor-pointer hover:border-indigo-500/40 hover:bg-slate-900/20 hover:scale-[1.02] active:scale-[0.98] transition-all duration-300"
+            >
               <div class="p-3 bg-indigo-600/10 text-indigo-400 rounded-xl border border-indigo-500/20"><FileCheck size={20} /></div>
               <div>
                 <p class="text-[10px] text-slate-400 uppercase font-semibold">Total Notes</p>
                 <h3 class="text-xl font-extrabold text-white font-display mt-0.5">{stats.totalNotes}</h3>
               </div>
             </div>
-            <div class="glass-panel border border-white/5 rounded-2xl p-6 flex items-center gap-4">
+            <div 
+              onClick={() => setActiveTab('reports')}
+              class="glass-panel border border-white/5 rounded-2xl p-6 flex items-center gap-4 cursor-pointer hover:border-amber-500/40 hover:bg-slate-900/20 hover:scale-[1.02] active:scale-[0.98] transition-all duration-300"
+            >
               <div class="p-3 bg-amber-600/10 text-amber-400 rounded-xl border border-amber-500/20"><Download size={20} /></div>
               <div>
                 <p class="text-[10px] text-slate-400 uppercase font-semibold">Total Downloads</p>
