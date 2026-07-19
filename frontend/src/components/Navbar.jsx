@@ -8,6 +8,7 @@ const Navbar = () => {
   const navigate = useNavigate();
   const location = useLocation();
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+  const [profileDropdownOpen, setProfileDropdownOpen] = useState(false);
 
   if (!isAuthenticated) return null;
 
@@ -60,16 +61,46 @@ const Navbar = () => {
         </div>
 
         {/* Profile, Logout & Hamburger Toggle */}
-        <div class="flex items-center gap-2 sm:gap-4">
-          <Link
-            to="/profile"
-            class="flex items-center gap-2 px-3 py-1.5 rounded-lg border border-slate-700/50 bg-slate-900/60 hover:border-slate-500 transition duration-300"
-          >
-            <User size={14} className="text-slate-400" />
-            <span class="text-xs text-slate-300 font-medium font-sans max-w-[80px] sm:max-w-[120px] truncate">
-              {user?.fullName || user?.username}
-            </span>
-          </Link>
+        <div class="flex items-center gap-2 sm:gap-4 relative">
+          
+          {/* Profile Dropdown Toggle Button */}
+          <div class="relative">
+            <button
+              onClick={() => setProfileDropdownOpen(!profileDropdownOpen)}
+              class="flex items-center gap-2 px-3 py-1.5 rounded-lg border border-slate-700/50 bg-slate-900/60 hover:border-slate-500 transition duration-300 cursor-pointer outline-none"
+            >
+              <User size={14} className="text-slate-400" />
+              <span class="text-xs text-slate-300 font-medium font-sans max-w-[80px] sm:max-w-[120px] truncate">
+                {user?.fullName || user?.username}
+              </span>
+            </button>
+
+            {/* Profile Dropdown Menu popup */}
+            {profileDropdownOpen && (
+              <div class="absolute right-0 mt-2 w-48 bg-slate-950/95 border border-white/10 rounded-xl shadow-xl py-1 z-50 backdrop-blur-md">
+                <Link
+                  to="/profile"
+                  onClick={() => setProfileDropdownOpen(false)}
+                  class="flex items-center gap-2 px-4 py-2.5 text-xs font-semibold text-slate-300 hover:text-white hover:bg-slate-900 transition"
+                >
+                  <User size={13} className="text-slate-400" />
+                  <span>My Profile</span>
+                </Link>
+                <a
+                  href="mailto:uninotesindia@gmail.com"
+                  onClick={() => setProfileDropdownOpen(false)}
+                  class="flex items-center gap-2 px-4 py-2.5 text-xs font-semibold text-slate-300 hover:text-white hover:bg-slate-900 transition border-t border-white/5"
+                >
+                  <HelpCircle size={13} className="text-slate-400" />
+                  <div class="flex flex-col text-left">
+                    <span>Contact Admin</span>
+                    <span class="text-[9px] text-slate-500 font-mono mt-0.5">uninotesindia@gmail.com</span>
+                  </div>
+                </a>
+              </div>
+            )}
+          </div>
+
           <button
             onClick={logout}
             class="flex items-center gap-1.5 px-3 py-1.5 bg-rose-600/20 hover:bg-rose-600/35 border border-rose-500/20 text-rose-300 hover:text-white rounded-lg text-xs font-semibold cursor-pointer transition duration-300"
