@@ -65,7 +65,7 @@ public class NoteController {
 
     @PostMapping(value = "/api/notes/upload", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
     public ResponseEntity<?> uploadNote(
-            @RequestParam("file") MultipartFile file,
+            @RequestParam("file") MultipartFile[] files,
             @RequestParam("title") String title,
             @RequestParam("description") String description,
             @RequestParam("universityId") Long universityId,
@@ -80,21 +80,41 @@ public class NoteController {
         }
         User user = (User) principal;
 
-        Note note = new Note();
-        note.setTitle(title);
-        note.setDescription(description);
-        note.setSemester(semester);
-        note.setNoteType(noteType);
+        if (files == null || files.length == 0) {
+            return ResponseEntity.badRequest().body(Map.of("error", "No files uploaded"));
+        }
 
-        note.setUniversity(universityRepository.findById(universityId)
-                .orElseThrow(() -> new RuntimeException("University not found")));
-        note.setBranch(branchRepository.findById(branchId)
-                .orElseThrow(() -> new RuntimeException("Branch not found")));
-        note.setSubject(subjectRepository.findById(subjectId)
-                .orElseThrow(() -> new RuntimeException("Subject not found")));
+        University university = universityRepository.findById(universityId)
+                .orElseThrow(() -> new RuntimeException("University not found"));
+        Branch branch = branchRepository.findById(branchId)
+                .orElseThrow(() -> new RuntimeException("Branch not found"));
+        Subject subject = subjectRepository.findById(subjectId)
+                .orElseThrow(() -> new RuntimeException("Subject not found"));
 
-        Note savedNote = noteService.uploadNote(note, file, user);
-        return ResponseEntity.ok(savedNote);
+        java.util.List<Note> savedNotes = new java.util.ArrayList<>();
+        for (MultipartFile file : files) {
+            Note note = new Note();
+            if (files.length > 1) {
+                String originalName = file.getOriginalFilename();
+                if (originalName != null && originalName.contains(".")) {
+                    originalName = originalName.substring(0, originalName.lastIndexOf("."));
+                }
+                note.setTitle(title + " - " + originalName);
+            } else {
+                note.setTitle(title);
+            }
+            note.setDescription(description);
+            note.setSemester(semester);
+            note.setNoteType(noteType);
+            note.setUniversity(university);
+            note.setBranch(branch);
+            note.setSubject(subject);
+
+            Note savedNote = noteService.uploadNote(note, file, user);
+            savedNotes.add(savedNote);
+        }
+
+        return ResponseEntity.ok(savedNotes);
     }
 
     @GetMapping("/api/notes/download/{id}")

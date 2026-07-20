@@ -22,7 +22,7 @@ export default function UploadForm() {
   const [noteType, setNoteType] = useState('NOTE');
 
   // File states
-  const [file, setFile] = useState(null);
+  const [files, setFiles] = useState([]);
   const fileInputRef = useRef(null);
 
   // Status indicators
@@ -68,29 +68,37 @@ export default function UploadForm() {
     e.stopPropagation();
     setDragActive(false);
     
-    if (e.dataTransfer.files && e.dataTransfer.files[0]) {
-      validateAndSetFile(e.dataTransfer.files[0]);
+    if (e.dataTransfer.files && e.dataTransfer.files.length > 0) {
+      validateAndAddFiles(Array.from(e.dataTransfer.files));
     }
   };
 
   const handleFileChange = (e) => {
-    if (e.target.files && e.target.files[0]) {
-      validateAndSetFile(e.target.files[0]);
+    if (e.target.files && e.target.files.length > 0) {
+      validateAndAddFiles(Array.from(e.target.files));
     }
   };
 
-  const validateAndSetFile = (selectedFile) => {
+  const validateAndAddFiles = (selectedFiles) => {
     const maxSize = 50 * 1024 * 1024; // 50MB
-    if (selectedFile.size > maxSize) {
-      showAlert('error', 'File size exceeds the 50MB maximum limit. Please upload a smaller file.');
-      return;
+    const validFiles = [];
+    
+    for (const f of selectedFiles) {
+      if (f.size > maxSize) {
+        showAlert('error', `File "${f.name}" exceeds the 50MB maximum limit and was skipped.`);
+        continue;
+      }
+      validFiles.push(f);
     }
-    setFile(selectedFile);
+    
+    if (validFiles.length > 0) {
+      setFiles(prev => [...prev, ...validFiles]);
+    }
   };
 
-  const handleRemoveFile = () => {
-    setFile(null);
-    if (fileInputRef.current) {
+  const handleRemoveFile = (indexToRemove) => {
+    setFiles(prev => prev.filter((_, idx) => idx !== indexToRemove));
+    if (files.length <= 1 && fileInputRef.current) {
       fileInputRef.current.value = '';
     }
   };
@@ -123,13 +131,15 @@ export default function UploadForm() {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    if (!title.trim() || !uniId || !branchId || !subjectId || !file) {
-      showAlert('error', 'Please fill in all fields and choose a valid file.');
+    if (!title.trim() || !uniId || !branchId || !subjectId || files.length === 0) {
+      showAlert('error', 'Please fill in all fields and choose at least one valid file.');
       return;
     }
 
     const formData = new FormData();
-    formData.append('file', file);
+    files.forEach(f => {
+      formData.append('file', f);
+    });
     formData.append('title', title);
     formData.append('description', description);
     formData.append('universityId', uniId);
@@ -209,11 +219,11 @@ export default function UploadForm() {
             class={`border-2 border-dashed rounded-2xl p-6 text-center cursor-pointer transition-all duration-300 relative ${
               dragActive 
                 ? 'border-blue-500 bg-blue-500/5' 
-                : file 
+                : files.length > 0
                   ? 'border-emerald-500/40 bg-emerald-500/5' 
                   : 'border-slate-800 bg-slate-900/40 hover:border-slate-600'
             }`}
-            onClick={() => !file && fileInputRef.current.click()}
+            onClick={() => files.length === 0 && fileInputRef.current.click()}
           >
             <input
               ref={fileInputRef}
@@ -221,9 +231,10 @@ export default function UploadForm() {
               onChange={handleFileChange}
               class="hidden"
               accept=".pdf,.doc,.docx,.png,.jpg,.jpeg,.txt"
+              multiple
             />
 
-            {!file ? (
+            {files.length === 0 ? (
               <div class="space-y-2">
                 <div class="mx-auto flex h-12 w-12 items-center justify-center rounded-xl bg-blue-600/10 text-blue-400 border border-blue-500/20">
                   <UploadCloud size={24} />
@@ -232,28 +243,41 @@ export default function UploadForm() {
                   Drag and drop files here, or <span class="text-blue-400 hover:underline">browse files</span>
                 </div>
                 <p class="text-[10px] text-slate-500 leading-normal">
-                  Supports PDF, Word Documents, text notes, and images (Max 50MB)
+                  Supports PDF, Word Documents, text notes, and images (Max 50MB per file)
                 </p>
               </div>
             ) : (
-              <div class="flex items-center justify-between bg-slate-950/60 p-4 rounded-xl border border-white/5">
-                <div class="flex items-center gap-3">
-                  <File className="h-8 w-8 text-emerald-400 shrink-0" />
-                  <div class="text-left">
-                    <p class="text-xs font-semibold text-slate-200 truncate max-w-[200px] sm:max-w-md">{file.name}</p>
-                    <p class="text-[10px] text-slate-500 mt-0.5">{(file.size / (1024 * 1024)).toFixed(2)} MB</p>
-                  </div>
+              <div class="space-y-3" onClick={(e) => e.stopPropagation()}>
+                <div class="flex items-center justify-between border-b border-white/5 pb-2 mb-2">
+                  <span class="text-[10px] uppercase font-bold tracking-wider text-slate-400">{files.length} {files.length === 1 ? 'file' : 'files'} selected</span>
+                  <button
+                    type="button"
+                    onClick={() => fileInputRef.current.click()}
+                    class="text-xs text-blue-400 hover:text-blue-300 font-semibold cursor-pointer"
+                  >
+                    + Add More Files
+                  </button>
                 </div>
-                <button
-                  type="button"
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    handleRemoveFile();
-                  }}
-                  class="p-2 text-slate-400 hover:text-rose-400 bg-slate-800/40 hover:bg-rose-500/10 rounded-lg cursor-pointer transition"
-                >
-                  <Trash size={14} />
-                </button>
+                <div class="max-h-60 overflow-y-auto space-y-2 pr-1 custom-scrollbar">
+                  {files.map((f, idx) => (
+                    <div key={idx} class="flex items-center justify-between bg-slate-950/60 p-3 rounded-xl border border-white/5">
+                      <div class="flex items-center gap-3 min-w-0">
+                        <File className="h-6 w-6 text-emerald-400 shrink-0" />
+                        <div class="text-left min-w-0">
+                          <p class="text-xs font-semibold text-slate-200 truncate max-w-[200px] sm:max-w-md">{f.name}</p>
+                          <p class="text-[10px] text-slate-500 mt-0.5">{(f.size / (1024 * 1024)).toFixed(2)} MB</p>
+                        </div>
+                      </div>
+                      <button
+                        type="button"
+                        onClick={() => handleRemoveFile(idx)}
+                        class="p-2 text-slate-400 hover:text-rose-400 bg-slate-800/40 hover:bg-rose-500/10 rounded-lg cursor-pointer transition"
+                      >
+                        <Trash size={12} />
+                      </button>
+                    </div>
+                  ))}
+                </div>
               </div>
             )}
           </div>
