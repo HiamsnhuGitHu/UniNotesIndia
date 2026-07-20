@@ -8,7 +8,7 @@ spring:
     name: uninotes-india
   data:
     mongodb:
-      uri: ${SPRING_DATA_MONGODB_URI:mongodb://localhost:27017/uninotes}
+      uri: ${SPRING_DATA_MONGODB_URI:mongodb://127.0.0.1:27017/uninotes}
       database: uninotes
   servlet:
     multipart:

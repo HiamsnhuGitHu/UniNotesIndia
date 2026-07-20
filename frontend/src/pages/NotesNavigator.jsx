@@ -1,8 +1,8 @@
 import React, { useState, useEffect } from 'react';
 import { useLocation } from 'react-router-dom';
 import api from '../services/api';
-import { 
-  Folder, ArrowLeft, Star, Download, Bookmark, Flag, Eye, 
+import {
+  Folder, ArrowLeft, Star, Download, Bookmark, Flag, Eye,
   ChevronRight, Calendar, User, FileText, CheckCircle2, MessageSquare, AlertCircle
 } from 'lucide-react';
 
@@ -26,7 +26,7 @@ export default function NotesNavigator() {
   const [activeNote, setActiveNote] = useState(null);
   const [reviews, setReviews] = useState([]);
   const [bookmarkedIds, setBookmarkedIds] = useState(new Set());
-  
+
   // Forms states
   const [reviewRating, setReviewRating] = useState(5);
   const [reviewText, setReviewText] = useState('');
@@ -106,8 +106,8 @@ export default function NotesNavigator() {
           subjectId: selectedSubject.id
         }
       })
-      .then(res => setNotes(res.data))
-      .catch(err => console.error(err));
+        .then(res => setNotes(res.data))
+        .catch(err => console.error(err));
     }
   }, [selectedUni, selectedBranch, selectedSem, selectedSubject]);
 
@@ -128,7 +128,7 @@ export default function NotesNavigator() {
 
   const handleDownload = (note) => {
     // Open in new tab or trigger download direct stream
-    window.open(`${api.defaults.baseURL || ''}/api/notes/download/${note.id}`, '_blank');
+    window.open(`/api/notes/download/${note.id}`, '_blank');
     // Increment local download count visual
     setActiveNote(prev => prev ? { ...prev, downloadCount: prev.downloadCount + 1 } : null);
   };
@@ -229,11 +229,11 @@ export default function NotesNavigator() {
 
   return (
     <div class="space-y-6">
-      
+
       {/* Breadcrumbs Navigation */}
       <div class="flex items-center flex-wrap gap-2 text-sm text-slate-400 font-medium bg-slate-900/40 p-4 rounded-xl border border-white/5 relative z-10">
         <button onClick={resetToUni} class="hover:text-white transition cursor-pointer">Universities</button>
-        
+
         {selectedUni && (
           <>
             <ChevronRight size={14} className="text-slate-600" />
@@ -271,11 +271,10 @@ export default function NotesNavigator() {
 
       {/* Floating Status Alerts */}
       {alertMsg.text && (
-        <div class={`fixed top-20 right-6 z-50 flex items-center gap-2 px-4 py-3 rounded-lg border text-sm shadow-xl ${
-          alertMsg.type === 'success' 
-            ? 'bg-emerald-500/10 border-emerald-500/30 text-emerald-400' 
+        <div class={`fixed top-20 right-6 z-50 flex items-center gap-2 px-4 py-3 rounded-lg border text-sm shadow-xl ${alertMsg.type === 'success'
+            ? 'bg-emerald-500/10 border-emerald-500/30 text-emerald-400'
             : 'bg-rose-500/10 border-rose-500/30 text-rose-400'
-        }`}>
+          }`}>
           {alertMsg.type === 'success' ? <CheckCircle2 size={16} /> : <AlertCircle size={16} />}
           <span>{alertMsg.text}</span>
         </div>
@@ -283,10 +282,10 @@ export default function NotesNavigator() {
 
       {/* Primary Display Area */}
       <div class="grid grid-cols-1 lg:grid-cols-12 gap-8">
-        
+
         {/* Left Side: Directory Browsers */}
         <div class="lg:col-span-8 space-y-6">
-          
+
           {/* Level 1: Select University */}
           {!selectedUni && (
             <div class="space-y-4">
@@ -366,7 +365,7 @@ export default function NotesNavigator() {
                 </button>
                 <h2 class="font-display text-2xl font-extrabold text-white">Select Subject</h2>
               </div>
-              
+
               {subjects.length === 0 ? (
                 <div class="glass-panel rounded-xl p-8 text-center text-slate-400">
                   No subjects registered for this semester yet.
@@ -410,18 +409,16 @@ export default function NotesNavigator() {
                     <div
                       key={note.id}
                       onClick={() => openNoteDetails(note)}
-                      class={`glass-panel rounded-xl p-5 border cursor-pointer hover:border-blue-500/40 hover:bg-slate-900/50 transition duration-300 ${
-                        activeNote?.id === note.id ? 'border-blue-500 bg-slate-900/60 shadow-lg' : 'border-white/5'
-                      }`}
+                      class={`glass-panel rounded-xl p-5 border cursor-pointer hover:border-blue-500/40 hover:bg-slate-900/50 transition duration-300 ${activeNote?.id === note.id ? 'border-blue-500 bg-slate-900/60 shadow-lg' : 'border-white/5'
+                        }`}
                     >
                       <div class="flex items-start justify-between gap-2">
-                        <span class={`px-2 py-0.5 rounded text-[10px] font-bold uppercase tracking-wider ${
-                          note.noteType === 'SYLLABUS' 
-                            ? 'bg-purple-500/20 text-purple-300 border border-purple-500/20' 
+                        <span class={`px-2 py-0.5 rounded text-[10px] font-bold uppercase tracking-wider ${note.noteType === 'SYLLABUS'
+                            ? 'bg-purple-500/20 text-purple-300 border border-purple-500/20'
                             : note.noteType === 'QUESTION_PAPER'
                               ? 'bg-amber-500/20 text-amber-300 border border-amber-500/20'
                               : 'bg-blue-500/20 text-blue-300 border border-blue-500/20'
-                        }`}>
+                          }`}>
                           {note.noteType.replace('_', ' ')}
                         </span>
                         <div class="flex items-center gap-1">
@@ -432,13 +429,13 @@ export default function NotesNavigator() {
 
                       <h3 class="font-bold text-white text-base mt-3 line-clamp-1">{note.title}</h3>
                       <p class="text-xs text-slate-400 mt-1 line-clamp-2 leading-relaxed">{note.description}</p>
-                      
+
                       <div class="mt-4 flex items-center justify-between border-t border-white/5 pt-3">
                         <span class="text-[10px] text-slate-500 flex items-center gap-1">
                           <User size={10} />
                           <span>{note.uploadedBy?.fullName || note.uploadedBy?.username}</span>
                         </span>
-                        
+
                         <div class="flex items-center gap-1.5">
                           <button
                             onClick={(e) => {
@@ -472,7 +469,7 @@ export default function NotesNavigator() {
         <div class="lg:col-span-4">
           {activeNote ? (
             <div class="glass-panel border border-white/10 rounded-2xl p-6 space-y-6 shadow-xl sticky top-24">
-              
+
               {/* Header Details */}
               <div>
                 <span class="text-[10px] uppercase font-bold text-blue-400 tracking-wider">
@@ -644,7 +641,7 @@ export default function NotesNavigator() {
       {showPreviewModal && activeNote && (
         <div class="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/80 backdrop-blur-sm p-4">
           <div class="w-full max-w-4xl h-[85vh] glass-panel rounded-2xl border border-white/10 flex flex-col overflow-hidden shadow-2xl">
-            
+
             {/* Modal Header */}
             <div class="flex items-center justify-between px-6 py-4 border-b border-white/5 bg-slate-900/60">
               <div>
@@ -663,13 +660,13 @@ export default function NotesNavigator() {
             <div class="flex-1 bg-slate-900 relative">
               {activeNote.fileType && activeNote.fileType.startsWith('image/') ? (
                 <img
-                  src={`${api.defaults.baseURL || ''}/api/notes/preview/${activeNote.id}`}
+                  src={`/api/notes/preview/${activeNote.id}`}
                   alt={activeNote.title}
                   class="w-full h-full object-contain"
                 />
               ) : (
                 <iframe
-                  src={`${api.defaults.baseURL || ''}/api/notes/preview/${activeNote.id}`}
+                  src={`/api/notes/preview/${activeNote.id}`}
                   title={activeNote.title}
                   class="w-full h-full border-0"
                 />

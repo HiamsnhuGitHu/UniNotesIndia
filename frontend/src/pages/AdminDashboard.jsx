@@ -6,7 +6,12 @@ import {
 } from 'lucide-react';
 
 export default function AdminDashboard() {
-  const [activeTab, setActiveTab] = useState('stats');
+  const [activeTab, setActiveTab] = useState(() => localStorage.getItem('adminActiveTab') || 'stats');
+
+  const handleTabChange = (tab) => {
+    setActiveTab(tab);
+    localStorage.setItem('adminActiveTab', tab);
+  };
   
   // States
   const [stats, setStats] = useState({ totalUsers: 0, totalUniversities: 0, totalNotes: 0, totalDownloads: 0 });
@@ -59,6 +64,20 @@ export default function AdminDashboard() {
     });
   };
 
+  const startAddingUser = () => {
+    setEditingUser({ id: null });
+    setEditForm({
+      fullName: '',
+      username: '',
+      email: '',
+      mobileNumber: '',
+      city: '',
+      collegeName: '',
+      role: 'ROLE_STUDENT',
+      password: ''
+    });
+  };
+
   const handleUpdateUserSubmit = async (e) => {
     e.preventDefault();
     try {
@@ -66,7 +85,7 @@ export default function AdminDashboard() {
         id: editingUser.id,
         ...editForm
       });
-      showAlert('success', 'User profile information updated successfully.');
+      showAlert('success', editingUser.id ? 'User profile information updated successfully.' : 'New user created successfully.');
       setEditingUser(null);
       fetchUsers();
       fetchStats();
@@ -74,7 +93,7 @@ export default function AdminDashboard() {
       if (err.response && err.response.data && err.response.data.error) {
         showAlert('error', err.response.data.error);
       } else {
-        showAlert('error', 'Failed to update user details.');
+        showAlert('error', editingUser.id ? 'Failed to update user details.' : 'Failed to create new user.');
       }
     }
   };
@@ -337,7 +356,7 @@ export default function AdminDashboard() {
         {['stats', 'approvals', 'users', 'directories', 'announcements', 'reports'].map(tab => (
           <button
             key={tab}
-            onClick={() => setActiveTab(tab)}
+            onClick={() => handleTabChange(tab)}
             class={`px-4 py-2 text-xs font-bold uppercase tracking-wider rounded-lg transition cursor-pointer shrink-0 ${
               activeTab === tab
                 ? 'bg-blue-600/20 text-blue-400 border border-blue-500/30'
@@ -354,7 +373,7 @@ export default function AdminDashboard() {
         <div class="space-y-6">
           <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
             <div 
-              onClick={() => setActiveTab('users')}
+              onClick={() => handleTabChange('users')}
               class="glass-panel border border-white/5 rounded-2xl p-6 flex items-center gap-4 cursor-pointer hover:border-blue-500/40 hover:bg-slate-900/20 hover:scale-[1.02] active:scale-[0.98] transition-all duration-300"
             >
               <div class="p-3 bg-blue-600/10 text-blue-400 rounded-xl border border-blue-500/20"><Users size={20} /></div>
@@ -364,7 +383,7 @@ export default function AdminDashboard() {
               </div>
             </div>
             <div 
-              onClick={() => setActiveTab('directories')}
+              onClick={() => handleTabChange('directories')}
               class="glass-panel border border-white/5 rounded-2xl p-6 flex items-center gap-4 cursor-pointer hover:border-purple-500/40 hover:bg-slate-900/20 hover:scale-[1.02] active:scale-[0.98] transition-all duration-300"
             >
               <div class="p-3 bg-purple-600/10 text-purple-400 rounded-xl border border-purple-500/20"><School size={20} /></div>
@@ -374,7 +393,7 @@ export default function AdminDashboard() {
               </div>
             </div>
             <div 
-              onClick={() => setActiveTab('approvals')}
+              onClick={() => handleTabChange('approvals')}
               class="glass-panel border border-white/5 rounded-2xl p-6 flex items-center gap-4 cursor-pointer hover:border-indigo-500/40 hover:bg-slate-900/20 hover:scale-[1.02] active:scale-[0.98] transition-all duration-300"
             >
               <div class="p-3 bg-indigo-600/10 text-indigo-400 rounded-xl border border-indigo-500/20"><FileCheck size={20} /></div>
@@ -384,7 +403,7 @@ export default function AdminDashboard() {
               </div>
             </div>
             <div 
-              onClick={() => setActiveTab('reports')}
+              onClick={() => handleTabChange('reports')}
               class="glass-panel border border-white/5 rounded-2xl p-6 flex items-center gap-4 cursor-pointer hover:border-amber-500/40 hover:bg-slate-900/20 hover:scale-[1.02] active:scale-[0.98] transition-all duration-300"
             >
               <div class="p-3 bg-amber-600/10 text-amber-400 rounded-xl border border-amber-500/20"><Download size={20} /></div>
@@ -439,7 +458,16 @@ export default function AdminDashboard() {
       {/* Tab: User Directory */}
       {activeTab === 'users' && (
         <div class="space-y-4">
-          <h3 class="font-display font-bold text-white text-lg">User Management</h3>
+          <div class="flex items-center gap-4">
+            <h3 class="font-display font-bold text-white text-lg">User Management</h3>
+            <button
+              onClick={startAddingUser}
+              class="flex items-center gap-1.5 px-3.5 py-1.5 bg-blue-600 hover:bg-blue-500 text-white rounded-xl text-xs font-semibold cursor-pointer transition shadow shadow-blue-500/20"
+            >
+              <Plus size={14} />
+              <span>Add New User</span>
+            </button>
+          </div>
           <div class="overflow-x-auto rounded-xl border border-white/5">
             <table class="w-full text-xs text-left text-slate-300">
               <thead class="bg-slate-900 text-slate-400 uppercase text-[9px] tracking-widest border-b border-white/5">
@@ -694,7 +722,9 @@ export default function AdminDashboard() {
       {editingUser && (
         <div class="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/85 backdrop-blur-sm p-4">
           <div class="w-full max-w-lg glass-panel rounded-2xl border border-white/10 p-6 space-y-4 shadow-2xl relative overflow-hidden">
-            <h3 class="font-display font-extrabold text-white text-lg">Edit Student Profile & Reset Password</h3>
+            <h3 class="font-display font-extrabold text-white text-lg">
+              {editingUser.id ? 'Edit Student Profile & Reset Password' : 'Create New User Account'}
+            </h3>
             
             <form onSubmit={handleUpdateUserSubmit} class="space-y-4">
               <div class="grid grid-cols-2 gap-3 text-xs">
@@ -780,12 +810,15 @@ export default function AdminDashboard() {
                 </div>
 
                 <div>
-                  <label class="block text-slate-400 mb-1 font-semibold uppercase tracking-wider">Reset Password (Optional)</label>
+                  <label class="block text-slate-400 mb-1 font-semibold uppercase tracking-wider">
+                    {editingUser.id ? 'Reset Password (Optional)' : 'Password'}
+                  </label>
                   <input
                     type="password"
+                    required={!editingUser.id}
                     value={editForm.password}
                     onChange={e => setEditForm({ ...editForm, password: e.target.value })}
-                    placeholder="Enter new password"
+                    placeholder={editingUser.id ? 'Enter new password' : 'Enter password'}
                     class="w-full bg-slate-900 border border-slate-700 rounded-lg px-3 py-2 text-white outline-none focus:border-blue-500"
                   />
                 </div>
@@ -804,7 +837,7 @@ export default function AdminDashboard() {
                   type="submit"
                   class="px-4 py-2 bg-blue-600 hover:bg-blue-500 text-white rounded-xl cursor-pointer"
                 >
-                  Save Changes
+                  {editingUser.id ? 'Save Changes' : 'Create User'}
                 </button>
               </div>
             </form>

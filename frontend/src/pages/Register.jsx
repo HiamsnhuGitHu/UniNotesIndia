@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
-import { UserPlus, AlertCircle, Sparkles } from 'lucide-react';
+import { UserPlus, AlertCircle, Sparkles, Eye, EyeOff } from 'lucide-react';
 
 export default function Register() {
   const { register } = useAuth();
@@ -20,6 +20,7 @@ export default function Register() {
   const [error, setError] = useState('');
   const [validationErrors, setValidationErrors] = useState({});
   const [loading, setLoading] = useState(false);
+  const [showPassword, setShowPassword] = useState(false);
 
   const validateForm = () => {
     const errors = {};
@@ -234,15 +235,25 @@ export default function Register() {
               <label class="block text-xs font-semibold text-slate-400 uppercase tracking-wider mb-1.5">
                 Password
               </label>
-              <input
-                name="password"
-                type="password"
-                required
-                value={formData.password}
-                onChange={handleChange}
-                class="block w-full rounded-xl border border-slate-700/60 bg-slate-900/60 px-4 py-2.5 text-sm text-white placeholder-slate-500 outline-none focus:border-blue-500"
-                placeholder="••••••••"
-              />
+              <div class="relative">
+                <input
+                  name="password"
+                  type={showPassword ? 'text' : 'password'}
+                  required
+                  value={formData.password}
+                  onChange={handleChange}
+                  class="block w-full rounded-xl border border-slate-700/60 bg-slate-900/60 pl-4 pr-12 py-2.5 text-sm text-white placeholder-slate-500 outline-none focus:border-blue-500"
+                  placeholder="••••••••"
+                />
+                <button
+                  type="button"
+                  onClick={() => setShowPassword(!showPassword)}
+                  class="absolute right-3.5 top-1/2 -translate-y-1/2 text-slate-400 hover:text-white transition-colors cursor-pointer"
+                  aria-label={showPassword ? 'Hide password' : 'Show password'}
+                >
+                  {showPassword ? <EyeOff size={18} /> : <Eye size={18} />}
+                </button>
+              </div>
               {validationErrors.password && (
                 <p class="mt-1 text-xs text-rose-400">{validationErrors.password}</p>
               )}
