@@ -204,7 +204,7 @@ public class NoteController {
     @GetMapping("/api/notes/my-uploads")
     public List<Note> getMyUploads() {
         User user = (User) SecurityContextHolder.getContext().getAuthentication().getPrincipal();
-        return noteRepository.findByUploadedById(user.getId());
+        return noteRepository.findByUploadedBy(user);
     }
 
     // Review endpoints

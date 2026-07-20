@@ -138,7 +138,9 @@ public class NoteService {
     }
 
     public void deleteNotesByUserAndCascade(Long userId) {
-        List<Note> userNotes = noteRepository.findByUploadedById(userId);
+        User user = new User();
+        user.setId(userId);
+        List<Note> userNotes = noteRepository.findByUploadedBy(user);
         for (Note note : userNotes) {
             deleteNoteAndCascade(note.getId());
         }
