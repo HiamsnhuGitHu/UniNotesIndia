@@ -2,9 +2,12 @@ package com.uninotes.india.controller;
 
 import com.uninotes.india.dto.*;
 import com.uninotes.india.service.AuthService;
+import com.uninotes.india.repository.UserRepository;
 import jakarta.validation.Valid;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.core.context.SecurityContextHolder;
+import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.HashMap;
@@ -16,6 +19,21 @@ public class AuthController {
 
     @Autowired
     private AuthService authService;
+
+    @Autowired
+    private UserRepository userRepository;
+
+    @GetMapping("/me")
+    public ResponseEntity<?> getMe() {
+        Object principal = SecurityContextHolder.getContext().getAuthentication().getPrincipal();
+        if (principal instanceof UserDetails) {
+            String username = ((UserDetails) principal).getUsername();
+            return userRepository.findByUsername(username)
+                    .map(user -> ResponseEntity.ok(authService.convertToDto(user)))
+                    .orElse(ResponseEntity.status(401).build());
+        }
+        return ResponseEntity.status(401).build();
+    }
 
     @PostMapping("/register")
     public ResponseEntity<?> registerUser(@Valid @RequestBody RegisterRequest request) {

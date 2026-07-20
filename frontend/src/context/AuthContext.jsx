@@ -41,6 +41,23 @@ export const AuthProvider = ({ children }) => {
   };
 
   useEffect(() => {
+    const fetchCurrentUser = async () => {
+      if (token) {
+        try {
+          const response = await api.get('/api/auth/me');
+          setUser(response.data);
+          localStorage.setItem('user', JSON.stringify(response.data));
+        } catch (err) {
+          if (err.response && err.response.status === 401) {
+            logout();
+          }
+        }
+      }
+    };
+    fetchCurrentUser();
+  }, [token]);
+
+  useEffect(() => {
     const handleAuthExpired = () => {
       logout();
     };

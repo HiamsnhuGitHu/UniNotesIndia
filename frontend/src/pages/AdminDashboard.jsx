@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import api from '../services/api';
+import { useAuth } from '../context/AuthContext';
 import { 
   Users, School, FileCheck, Download, AlertTriangle, ShieldCheck, 
   Trash2, ToggleLeft, ToggleRight, Check, X, Plus, Edit2, Send, MessageSquare 
@@ -12,6 +13,16 @@ export default function AdminDashboard() {
     setActiveTab(tab);
     localStorage.setItem('adminActiveTab', tab);
   };
+
+  const { user } = useAuth();
+  const isSubAdmin = user?.role === 'ROLE_SUBADMIN';
+
+  // If a sub admin somehow tries to go to 'users' tab, reset them to 'stats'
+  useEffect(() => {
+    if (isSubAdmin && activeTab === 'users') {
+      handleTabChange('stats');
+    }
+  }, [activeTab, isSubAdmin]);
   
   // States
   const [stats, setStats] = useState({ totalUsers: 0, totalUniversities: 0, totalNotes: 0, totalDownloads: 0 });
@@ -338,7 +349,9 @@ export default function AdminDashboard() {
     <div class="space-y-6">
       
       <div>
-        <h1 class="font-display text-2xl font-extrabold text-white">Administrator Dashboard</h1>
+        <h1 class="font-display text-2xl font-extrabold text-white">
+          {isSubAdmin ? 'Sub Administrator Dashboard' : 'Administrator Dashboard'}
+        </h1>
         <p class="text-xs text-slate-400 mt-1">Platform metrics, user moderation controls, directory setup, and reports.</p>
       </div>
 
@@ -353,19 +366,21 @@ export default function AdminDashboard() {
 
       {/* Navigation Tabs */}
       <div class="flex items-center gap-2 border-b border-white/5 pb-2 overflow-x-auto">
-        {['stats', 'approvals', 'users', 'directories', 'announcements', 'reports'].map(tab => (
-          <button
-            key={tab}
-            onClick={() => handleTabChange(tab)}
-            class={`px-4 py-2 text-xs font-bold uppercase tracking-wider rounded-lg transition cursor-pointer shrink-0 ${
-              activeTab === tab
-                ? 'bg-blue-600/20 text-blue-400 border border-blue-500/30'
-                : 'text-slate-400 hover:text-white hover:bg-slate-900/40'
-            }`}
-          >
-            {tab}
-          </button>
-        ))}
+        {['stats', 'approvals', 'users', 'directories', 'announcements', 'reports']
+          .filter(tab => !(isSubAdmin && tab === 'users'))
+          .map(tab => (
+            <button
+              key={tab}
+              onClick={() => handleTabChange(tab)}
+              class={`px-4 py-2 text-xs font-bold uppercase tracking-wider rounded-lg transition cursor-pointer shrink-0 ${
+                activeTab === tab
+                  ? 'bg-blue-600/20 text-blue-400 border border-blue-500/30'
+                  : 'text-slate-400 hover:text-white hover:bg-slate-900/40'
+              }`}
+            >
+              {tab}
+            </button>
+          ))}
       </div>
 
       {/* Tab: Stats Cards */}
@@ -373,8 +388,12 @@ export default function AdminDashboard() {
         <div class="space-y-6">
           <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
             <div 
-              onClick={() => handleTabChange('users')}
-              class="glass-panel border border-white/5 rounded-2xl p-6 flex items-center gap-4 cursor-pointer hover:border-blue-500/40 hover:bg-slate-900/20 hover:scale-[1.02] active:scale-[0.98] transition-all duration-300"
+              onClick={() => !isSubAdmin && handleTabChange('users')}
+              class={`glass-panel border border-white/5 rounded-2xl p-6 flex items-center gap-4 ${
+                isSubAdmin 
+                  ? 'cursor-default opacity-70' 
+                  : 'cursor-pointer hover:border-blue-500/40 hover:bg-slate-900/20 hover:scale-[1.02] active:scale-[0.98]'
+              } transition-all duration-300`}
             >
               <div class="p-3 bg-blue-600/10 text-blue-400 rounded-xl border border-blue-500/20"><Users size={20} /></div>
               <div>
@@ -383,8 +402,12 @@ export default function AdminDashboard() {
               </div>
             </div>
             <div 
-              onClick={() => handleTabChange('directories')}
-              class="glass-panel border border-white/5 rounded-2xl p-6 flex items-center gap-4 cursor-pointer hover:border-purple-500/40 hover:bg-slate-900/20 hover:scale-[1.02] active:scale-[0.98] transition-all duration-300"
+              onClick={() => !isSubAdmin && handleTabChange('directories')}
+              class={`glass-panel border border-white/5 rounded-2xl p-6 flex items-center gap-4 ${
+                isSubAdmin 
+                  ? 'cursor-default opacity-70' 
+                  : 'cursor-pointer hover:border-purple-500/40 hover:bg-slate-900/20 hover:scale-[1.02] active:scale-[0.98]'
+              } transition-all duration-300`}
             >
               <div class="p-3 bg-purple-600/10 text-purple-400 rounded-xl border border-purple-500/20"><School size={20} /></div>
               <div>
@@ -393,8 +416,12 @@ export default function AdminDashboard() {
               </div>
             </div>
             <div 
-              onClick={() => handleTabChange('approvals')}
-              class="glass-panel border border-white/5 rounded-2xl p-6 flex items-center gap-4 cursor-pointer hover:border-indigo-500/40 hover:bg-slate-900/20 hover:scale-[1.02] active:scale-[0.98] transition-all duration-300"
+              onClick={() => !isSubAdmin && handleTabChange('approvals')}
+              class={`glass-panel border border-white/5 rounded-2xl p-6 flex items-center gap-4 ${
+                isSubAdmin 
+                  ? 'cursor-default opacity-70' 
+                  : 'cursor-pointer hover:border-indigo-500/40 hover:bg-slate-900/20 hover:scale-[1.02] active:scale-[0.98]'
+              } transition-all duration-300`}
             >
               <div class="p-3 bg-indigo-600/10 text-indigo-400 rounded-xl border border-indigo-500/20"><FileCheck size={20} /></div>
               <div>
@@ -403,8 +430,12 @@ export default function AdminDashboard() {
               </div>
             </div>
             <div 
-              onClick={() => handleTabChange('reports')}
-              class="glass-panel border border-white/5 rounded-2xl p-6 flex items-center gap-4 cursor-pointer hover:border-amber-500/40 hover:bg-slate-900/20 hover:scale-[1.02] active:scale-[0.98] transition-all duration-300"
+              onClick={() => !isSubAdmin && handleTabChange('reports')}
+              class={`glass-panel border border-white/5 rounded-2xl p-6 flex items-center gap-4 ${
+                isSubAdmin 
+                  ? 'cursor-default opacity-70' 
+                  : 'cursor-pointer hover:border-amber-500/40 hover:bg-slate-900/20 hover:scale-[1.02] active:scale-[0.98]'
+              } transition-all duration-300`}
             >
               <div class="p-3 bg-amber-600/10 text-amber-400 rounded-xl border border-amber-500/20"><Download size={20} /></div>
               <div>
