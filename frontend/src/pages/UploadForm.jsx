@@ -30,6 +30,11 @@ export default function UploadForm() {
   const [alert, setAlert] = useState({ type: '', text: '' });
   const [uploadSuccess, setUploadSuccess] = useState(false);
 
+  // Add Subject states
+  const [showSubjectModal, setShowSubjectModal] = useState(false);
+  const [newSubjectName, setNewSubjectName] = useState('');
+  const [subjectAdding, setSubjectAdding] = useState(false);
+
   // Fetch initial select lists
   useEffect(() => {
     api.get('/api/universities').then(res => setUniversities(res.data));
@@ -86,6 +91,32 @@ export default function UploadForm() {
     setFile(null);
     if (fileInputRef.current) {
       fileInputRef.current.value = '';
+    }
+  };
+
+  const handleAddSubject = async (e) => {
+    e.preventDefault();
+    if (!newSubjectName.trim() || !branchId) return;
+
+    setSubjectAdding(true);
+    try {
+      const selectedBranch = branches.find(b => b.id === Number(branchId));
+      const response = await api.post('/api/subjects', {
+        name: newSubjectName.trim(),
+        branch: selectedBranch,
+        semester: Number(semester)
+      });
+
+      const newSub = response.data;
+      setSubjects(prev => [...prev, newSub]);
+      setSubjectId(newSub.id);
+      setNewSubjectName('');
+      setShowSubjectModal(false);
+      showAlert('success', `Subject "${newSub.name}" added successfully.`);
+    } catch (err) {
+      showAlert('error', 'Failed to add subject.');
+    } finally {
+      setSubjectAdding(false);
     }
   };
 
@@ -317,7 +348,18 @@ export default function UploadForm() {
 
             {/* Subject */}
             <div class="sm:col-span-2">
-              <label class="block text-xs font-semibold text-slate-400 mb-1.5 uppercase tracking-wider">Subject Mapping</label>
+              <div class="flex items-center justify-between mb-1.5">
+                <label class="block text-xs font-semibold text-slate-400 uppercase tracking-wider">Subject Mapping</label>
+                {branchId && (
+                  <button
+                    type="button"
+                    onClick={() => setShowSubjectModal(true)}
+                    class="text-xs text-blue-400 hover:text-blue-300 font-semibold cursor-pointer"
+                  >
+                    + Add New Subject
+                  </button>
+                )}
+              </div>
               <select
                 required
                 disabled={!branchId}
@@ -348,6 +390,52 @@ export default function UploadForm() {
           </button>
 
         </form>
+      )}
+
+      {/* Add Subject Modal Popup */}
+      {showSubjectModal && (
+        <div class="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/80 backdrop-blur-sm p-4">
+          <div class="w-full max-w-md glass-panel rounded-2xl border border-white/10 p-6 space-y-4 shadow-2xl relative overflow-hidden">
+            <h3 class="font-display font-extrabold text-white text-lg">Add New Subject</h3>
+            <p class="text-xs text-slate-400">
+              Create a new subject mapping for <span class="text-blue-400 font-semibold">{branches.find(b => b.id === Number(branchId))?.name}</span> (Semester {semester}).
+            </p>
+            
+            <form onSubmit={handleAddSubject} class="space-y-4">
+              <div>
+                <label class="block text-xs font-semibold text-slate-400 mb-1.5 uppercase">Subject Name</label>
+                <input
+                  type="text"
+                  required
+                  value={newSubjectName}
+                  onChange={e => setNewSubjectName(e.target.value)}
+                  placeholder="e.g. Theory of Computation"
+                  class="w-full text-xs bg-slate-900 border border-slate-700 rounded-xl px-3 py-2.5 text-white outline-none focus:border-blue-500"
+                />
+              </div>
+
+              <div class="flex justify-end gap-2 pt-2 text-xs font-semibold">
+                <button
+                  type="button"
+                  onClick={() => {
+                    setShowSubjectModal(false);
+                    setNewSubjectName('');
+                  }}
+                  class="px-4 py-2 bg-slate-800 hover:bg-slate-700 text-slate-300 rounded-xl border border-white/5 cursor-pointer"
+                >
+                  Cancel
+                </button>
+                <button
+                  type="submit"
+                  disabled={subjectAdding || !newSubjectName.trim()}
+                  class="px-4 py-2 bg-blue-600 hover:bg-blue-500 text-white rounded-xl cursor-pointer disabled:opacity-50"
+                >
+                  {subjectAdding ? 'Adding...' : 'Add Subject'}
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
       )}
 
     </div>
