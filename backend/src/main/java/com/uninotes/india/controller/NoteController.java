@@ -201,6 +201,12 @@ public class NoteController {
         return bookmarkRepository.findByUserId(user.getId());
     }
 
+    @GetMapping("/api/notes/my-uploads")
+    public List<Note> getMyUploads() {
+        User user = (User) SecurityContextHolder.getContext().getAuthentication().getPrincipal();
+        return noteRepository.findByUploadedById(user.getId());
+    }
+
     // Review endpoints
     @PostMapping("/api/notes/{id}/reviews")
     public ResponseEntity<?> addReview(@PathVariable Long id, @RequestBody Map<String, Object> payload) {

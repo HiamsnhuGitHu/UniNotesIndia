@@ -19,15 +19,12 @@ export default function Profile() {
 
   const fetchProfileData = async () => {
     try {
-      const [bmarkRes, notesRes] = await Promise.all([
+      const [bmarkRes, uploadsRes] = await Promise.all([
         api.get('/api/notes/bookmarks'),
-        api.get('/api/notes/search') // Fetch approved notes to filter, or fetch all notes
+        api.get('/api/notes/my-uploads') // Fetch all user uploads (both approved and pending)
       ]);
       setBookmarks(bmarkRes.data);
-
-      // Filter user uploads
-      const userUploads = notesRes.data.filter(n => n.uploadedBy?.id === user.id);
-      setUploads(userUploads);
+      setUploads(uploadsRes.data);
     } catch (err) {
       console.error('Failed to load profile lists', err);
     }

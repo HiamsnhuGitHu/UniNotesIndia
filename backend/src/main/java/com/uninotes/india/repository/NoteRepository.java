@@ -9,6 +9,7 @@ import java.util.List;
 @Repository
 public interface NoteRepository extends MongoRepository<Note, Long> {
     List<Note> findByStatus(String status);
+    @org.springframework.data.mongodb.repository.Query("{ 'uploadedBy.$id' : ?0 }")
     List<Note> findByUploadedById(Long userId);
     List<Note> findByUniversityId(Long universityId);
     List<Note> findByBranchId(Long branchId);
