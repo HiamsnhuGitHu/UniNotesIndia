@@ -1,12 +1,14 @@
 import React, { useState, useEffect } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
 import api from '../services/api';
+import { useAuth } from '../context/AuthContext';
 import {
-  Folder, ArrowLeft, Star, Download, Bookmark, Flag, Eye,
+  Folder, ArrowLeft, Star, Download, Bookmark, Flag, Eye, Trash,
   ChevronRight, Calendar, User, FileText, CheckCircle2, MessageSquare, AlertCircle, Upload, Plus
 } from 'lucide-react';
 
 export default function NotesNavigator() {
+  const { user } = useAuth();
   const location = useLocation();
   const navigate = useNavigate();
 
@@ -148,6 +150,19 @@ export default function NotesNavigator() {
     window.open(`/api/notes/download/${note.id}`, '_blank');
     // Increment local download count visual
     setActiveNote(prev => prev ? { ...prev, downloadCount: prev.downloadCount + 1 } : null);
+  };
+
+  const handleDeleteNote = async (noteId) => {
+    if (!window.confirm('Are you sure you want to permanently delete this note and its associated file?')) return;
+    try {
+      await api.delete(`/api/admin/notes/${noteId}`);
+      setNotes(prev => prev.filter(n => n.id !== noteId));
+      setActiveNote(null);
+      showAlert('success', 'Note deleted successfully by admin.');
+    } catch (err) {
+      console.error(err);
+      showAlert('error', 'Failed to delete note.');
+    }
   };
 
   const handleBookmarkToggle = async (note) => {
@@ -612,6 +627,17 @@ export default function NotesNavigator() {
                   <span>Report</span>
                 </button>
               </div>
+
+              {/* Admin Deletion Action */}
+              {(user?.role === 'ROLE_ADMIN' || user?.role === 'ROLE_SUBADMIN') && (
+                <button
+                  onClick={() => handleDeleteNote(activeNote.id)}
+                  class="w-full flex items-center justify-center gap-1.5 py-3 bg-rose-600/10 hover:bg-rose-600 text-rose-400 hover:text-white rounded-xl text-xs font-bold cursor-pointer transition border border-rose-500/20 hover:border-rose-500"
+                >
+                  <Trash size={13} />
+                  <span>Delete Note (Admin)</span>
+                </button>
+              )}
 
               {/* Report Input Form */}
               {showReportForm && (
