@@ -351,15 +351,19 @@ export default function UploadForm() {
             <div class="sm:col-span-2">
               <div class="flex items-center justify-between mb-1.5">
                 <label class="block text-xs font-semibold text-slate-400 uppercase tracking-wider">Subject Mapping</label>
-                {branchId && (
-                  <button
-                    type="button"
-                    onClick={() => setShowSubjectModal(true)}
-                    class="text-xs text-blue-400 hover:text-blue-300 font-semibold cursor-pointer"
-                  >
-                    + Add New Subject
-                  </button>
-                )}
+                <button
+                  type="button"
+                  onClick={() => {
+                    if (!branchId) {
+                      showAlert('error', 'Please select a branch first before adding a subject.');
+                      return;
+                    }
+                    setShowSubjectModal(true);
+                  }}
+                  class="text-xs text-blue-400 hover:text-blue-300 font-semibold cursor-pointer"
+                >
+                  + Add New Subject
+                </button>
               </div>
               <select
                 required
