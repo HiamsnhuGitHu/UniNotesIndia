@@ -805,7 +805,6 @@ export default function AdminDashboard() {
                     <option value="ROLE_STUDENT">STUDENT</option>
                     <option value="ROLE_ADMIN">ADMIN</option>
                     <option value="ROLE_SUBADMIN">SUBADMIN</option>
-                    <option value="ROLE_VIEWER">VIEWER</option>
                   </select>
                 </div>
 
