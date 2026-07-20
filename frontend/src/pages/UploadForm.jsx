@@ -1,10 +1,11 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useLocation } from 'react-router-dom';
 import api from '../services/api';
 import { UploadCloud, File, Trash, CheckCircle2, AlertTriangle, ArrowRight } from 'lucide-react';
 
 export default function UploadForm() {
   const navigate = useNavigate();
+  const location = useLocation();
 
   // Reference lists
   const [universities, setUniversities] = useState([]);
@@ -14,10 +15,10 @@ export default function UploadForm() {
   // Form states
   const [title, setTitle] = useState('');
   const [description, setDescription] = useState('');
-  const [uniId, setUniId] = useState('');
-  const [branchId, setBranchId] = useState('');
-  const [semester, setSemester] = useState(1);
-  const [subjectId, setSubjectId] = useState('');
+  const [uniId, setUniId] = useState(location.state?.universityId ? String(location.state.universityId) : '');
+  const [branchId, setBranchId] = useState(location.state?.branchId ? String(location.state.branchId) : '');
+  const [semester, setSemester] = useState(location.state?.semester ? Number(location.state.semester) : 1);
+  const [subjectId, setSubjectId] = useState(location.state?.subjectId ? String(location.state.subjectId) : '');
   const [noteType, setNoteType] = useState('NOTE');
 
   // File states

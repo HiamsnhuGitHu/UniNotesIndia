@@ -1,13 +1,25 @@
 import React, { useState, useEffect } from 'react';
-import { useLocation } from 'react-router-dom';
+import { useLocation, useNavigate } from 'react-router-dom';
 import api from '../services/api';
 import {
   Folder, ArrowLeft, Star, Download, Bookmark, Flag, Eye,
-  ChevronRight, Calendar, User, FileText, CheckCircle2, MessageSquare, AlertCircle
+  ChevronRight, Calendar, User, FileText, CheckCircle2, MessageSquare, AlertCircle, Upload
 } from 'lucide-react';
 
 export default function NotesNavigator() {
   const location = useLocation();
+  const navigate = useNavigate();
+
+  const handleUploadNotesRedirect = () => {
+    navigate('/upload', {
+      state: {
+        universityId: selectedUni?.id,
+        branchId: selectedBranch?.id,
+        semester: selectedSem,
+        subjectId: selectedSubject?.id
+      }
+    });
+  };
 
   // Navigation levels
   const [universities, setUniversities] = useState([]);
@@ -397,11 +409,25 @@ export default function NotesNavigator() {
                   </button>
                   <h2 class="font-display text-2xl font-extrabold text-white">Available Notes</h2>
                 </div>
+                <button
+                  onClick={handleUploadNotesRedirect}
+                  class="flex items-center gap-1.5 px-4 py-2 bg-blue-600 hover:bg-blue-500 text-white rounded-xl text-xs font-semibold cursor-pointer transition shadow shadow-blue-500/20"
+                >
+                  <Upload size={14} className="rotate-180" />
+                  <span>Upload Notes</span>
+                </button>
               </div>
 
               {notes.length === 0 ? (
-                <div class="glass-panel rounded-xl p-10 text-center text-slate-400">
-                  No approved notes available for this subject. Be the first to upload!
+                <div class="glass-panel rounded-xl p-10 text-center text-slate-400 space-y-4 flex flex-col items-center justify-center">
+                  <p>No approved notes available for this subject. Be the first to upload!</p>
+                  <button
+                    onClick={handleUploadNotesRedirect}
+                    class="flex items-center gap-1.5 px-4 py-2 bg-blue-600 hover:bg-blue-500 text-white rounded-xl text-xs font-semibold cursor-pointer transition shadow shadow-blue-500/20"
+                  >
+                    <Upload size={14} className="rotate-180" />
+                    <span>Upload Notes</span>
+                  </button>
                 </div>
               ) : (
                 <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
