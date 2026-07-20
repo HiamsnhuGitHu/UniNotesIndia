@@ -29,15 +29,30 @@ export default function NotesNavigator() {
   const [subjects, setSubjects] = useState([]);
   const [notes, setNotes] = useState([]);
 
-  // Selections
-  const [selectedUni, setSelectedUni] = useState(null);
-  const [selectedBranch, setSelectedBranch] = useState(null);
-  const [selectedSem, setSelectedSem] = useState(null);
-  const [selectedSubject, setSelectedSubject] = useState(null);
+  // Selections (synced with sessionStorage to survive browser refresh)
+  const [selectedUni, setSelectedUni] = useState(() => {
+    const saved = sessionStorage.getItem('selectedUni');
+    return saved ? JSON.parse(saved) : null;
+  });
+  const [selectedBranch, setSelectedBranch] = useState(() => {
+    const saved = sessionStorage.getItem('selectedBranch');
+    return saved ? JSON.parse(saved) : null;
+  });
+  const [selectedSem, setSelectedSem] = useState(() => {
+    const saved = sessionStorage.getItem('selectedSem');
+    return saved ? JSON.parse(saved) : null;
+  });
+  const [selectedSubject, setSelectedSubject] = useState(() => {
+    const saved = sessionStorage.getItem('selectedSubject');
+    return saved ? JSON.parse(saved) : null;
+  });
   const [searchQuery, setSearchQuery] = useState('');
 
   // Active details modal
-  const [activeNote, setActiveNote] = useState(null);
+  const [activeNote, setActiveNote] = useState(() => {
+    const saved = sessionStorage.getItem('activeNote');
+    return saved ? JSON.parse(saved) : null;
+  });
   const [reviews, setReviews] = useState([]);
   const [bookmarkedIds, setBookmarkedIds] = useState(new Set());
 
@@ -131,19 +146,50 @@ export default function NotesNavigator() {
   }, [selectedUni, selectedBranch, selectedSem, selectedSubject]);
 
   // Fetch reviews when note detail is opened
-  const openNoteDetails = async (note) => {
+  const openNoteDetails = (note) => {
     setActiveNote(note);
     setReviewText('');
     setReviewRating(5);
     setReportReason('');
     setShowReportForm(false);
-    try {
-      const res = await api.get(`/api/notes/${note.id}/reviews`);
-      setReviews(res.data);
-    } catch (err) {
-      console.error(err);
-    }
   };
+
+  // Synchronize selections with sessionStorage to survive refresh
+  useEffect(() => {
+    if (selectedUni) sessionStorage.setItem('selectedUni', JSON.stringify(selectedUni));
+    else sessionStorage.removeItem('selectedUni');
+  }, [selectedUni]);
+
+  useEffect(() => {
+    if (selectedBranch) sessionStorage.setItem('selectedBranch', JSON.stringify(selectedBranch));
+    else sessionStorage.removeItem('selectedBranch');
+  }, [selectedBranch]);
+
+  useEffect(() => {
+    if (selectedSem) sessionStorage.setItem('selectedSem', JSON.stringify(selectedSem));
+    else sessionStorage.removeItem('selectedSem');
+  }, [selectedSem]);
+
+  useEffect(() => {
+    if (selectedSubject) sessionStorage.setItem('selectedSubject', JSON.stringify(selectedSubject));
+    else sessionStorage.removeItem('selectedSubject');
+  }, [selectedSubject]);
+
+  useEffect(() => {
+    if (activeNote) sessionStorage.setItem('activeNote', JSON.stringify(activeNote));
+    else sessionStorage.removeItem('activeNote');
+  }, [activeNote]);
+
+  // Fetch reviews whenever activeNote changes (handles both user click and session recovery)
+  useEffect(() => {
+    if (activeNote) {
+      api.get(`/api/notes/${activeNote.id}/reviews`)
+        .then(res => setReviews(res.data))
+        .catch(err => console.error(err));
+    } else {
+      setReviews([]);
+    }
+  }, [activeNote]);
 
   const handleDownload = (note) => {
     // Open in new tab or trigger download direct stream

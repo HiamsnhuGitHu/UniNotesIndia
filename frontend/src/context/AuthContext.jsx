@@ -34,6 +34,11 @@ export const AuthProvider = ({ children }) => {
     setUser(null);
     localStorage.removeItem('token');
     localStorage.removeItem('user');
+    sessionStorage.removeItem('selectedUni');
+    sessionStorage.removeItem('selectedBranch');
+    sessionStorage.removeItem('selectedSem');
+    sessionStorage.removeItem('selectedSubject');
+    sessionStorage.removeItem('activeNote');
     // Soft redirect rather than hard window redirect to avoid routing loops
     if (window.location.pathname !== '/login') {
       window.location.href = '/login';
