@@ -3,7 +3,7 @@ import { useLocation, useNavigate } from 'react-router-dom';
 import api from '../services/api';
 import {
   Folder, ArrowLeft, Star, Download, Bookmark, Flag, Eye,
-  ChevronRight, Calendar, User, FileText, CheckCircle2, MessageSquare, AlertCircle, Upload
+  ChevronRight, Calendar, User, FileText, CheckCircle2, MessageSquare, AlertCircle, Upload, Plus
 } from 'lucide-react';
 
 export default function NotesNavigator() {
@@ -48,6 +48,11 @@ export default function NotesNavigator() {
 
   // Status message alerts
   const [alertMsg, setAlertMsg] = useState({ type: '', text: '' });
+
+  // Add Subject states
+  const [showSubjectModal, setShowSubjectModal] = useState(false);
+  const [newSubjectName, setNewSubjectName] = useState('');
+  const [subjectAdding, setSubjectAdding] = useState(false);
 
   // Initial load
   useEffect(() => {
@@ -198,6 +203,34 @@ export default function NotesNavigator() {
       showAlert('success', 'Report filed. Administrators will investigate.');
     } catch (err) {
       showAlert('error', 'Failed to file report');
+    }
+  };
+
+  const handleAddSubject = async (e) => {
+    e.preventDefault();
+    if (!newSubjectName.trim() || !selectedBranch) return;
+
+    setSubjectAdding(true);
+    try {
+      const response = await api.post('/api/subjects', {
+        name: newSubjectName.trim(),
+        branch: selectedBranch,
+        semester: Number(selectedSem)
+      });
+
+      const newSub = response.data;
+      setSubjects(prev => [...prev, newSub]);
+      setNewSubjectName('');
+      setShowSubjectModal(false);
+      
+      // Auto-select the newly added subject so the notes view opens!
+      setSelectedSubject(newSub);
+      
+      showAlert('success', `Subject "${newSub.name}" added successfully.`);
+    } catch (err) {
+      showAlert('error', 'Failed to add subject.');
+    } finally {
+      setSubjectAdding(false);
     }
   };
 
@@ -371,16 +404,32 @@ export default function NotesNavigator() {
           {/* Level 4: Select Subject */}
           {selectedUni && selectedBranch && selectedSem && !selectedSubject && (
             <div class="space-y-4">
-              <div class="flex items-center gap-3">
-                <button onClick={resetToSem} class="p-1.5 rounded-lg bg-slate-900 border border-slate-700/60 text-slate-400 hover:text-white cursor-pointer">
-                  <ArrowLeft size={16} />
+              <div class="flex items-center justify-between">
+                <div class="flex items-center gap-3">
+                  <button onClick={resetToSem} class="p-1.5 rounded-lg bg-slate-900 border border-slate-700/60 text-slate-400 hover:text-white cursor-pointer">
+                    <ArrowLeft size={16} />
+                  </button>
+                  <h2 class="font-display text-2xl font-extrabold text-white">Select Subject</h2>
+                </div>
+                <button
+                  onClick={() => setShowSubjectModal(true)}
+                  class="flex items-center gap-1.5 px-3.5 py-1.5 bg-blue-600 hover:bg-blue-500 text-white rounded-xl text-xs font-semibold cursor-pointer transition shadow shadow-blue-500/20"
+                >
+                  <Plus size={14} />
+                  <span>Add New Subject</span>
                 </button>
-                <h2 class="font-display text-2xl font-extrabold text-white">Select Subject</h2>
               </div>
 
               {subjects.length === 0 ? (
-                <div class="glass-panel rounded-xl p-8 text-center text-slate-400">
-                  No subjects registered for this semester yet.
+                <div class="glass-panel rounded-xl p-8 text-center text-slate-400 space-y-4 flex flex-col items-center justify-center">
+                  <p>No subjects registered for this semester yet.</p>
+                  <button
+                    onClick={() => setShowSubjectModal(true)}
+                    class="flex items-center gap-1.5 px-4 py-2 bg-blue-600 hover:bg-blue-500 text-white rounded-xl text-xs font-semibold cursor-pointer transition shadow shadow-blue-500/20"
+                  >
+                    <Plus size={14} />
+                    <span>Add New Subject</span>
+                  </button>
                 </div>
               ) : (
                 <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
@@ -699,6 +748,52 @@ export default function NotesNavigator() {
               )}
             </div>
 
+          </div>
+        </div>
+      )}
+
+      {/* Add Subject Modal Popup */}
+      {showSubjectModal && (
+        <div class="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/80 backdrop-blur-sm p-4">
+          <div class="w-full max-w-md glass-panel rounded-2xl border border-white/10 p-6 space-y-4 shadow-2xl relative overflow-hidden">
+            <h3 class="font-display font-extrabold text-white text-lg">Add New Subject</h3>
+            <p class="text-xs text-slate-400">
+              Create a new subject mapping for <span class="text-blue-400 font-semibold">{selectedBranch?.name}</span> (Semester {selectedSem}).
+            </p>
+            
+            <form onSubmit={handleAddSubject} class="space-y-4">
+              <div>
+                <label class="block text-xs font-semibold text-slate-400 mb-1.5 uppercase">Subject Name</label>
+                <input
+                  type="text"
+                  required
+                  value={newSubjectName}
+                  onChange={e => setNewSubjectName(e.target.value)}
+                  placeholder="e.g. Theory of Computation"
+                  class="w-full text-xs bg-slate-900 border border-slate-700 rounded-xl px-3 py-2.5 text-white outline-none focus:border-blue-500"
+                />
+              </div>
+
+              <div class="flex justify-end gap-2 pt-2 text-xs font-semibold">
+                <button
+                  type="button"
+                  onClick={() => {
+                    setShowSubjectModal(false);
+                    setNewSubjectName('');
+                  }}
+                  class="px-4 py-2 bg-slate-800 hover:bg-slate-700 text-slate-300 rounded-xl border border-white/5 cursor-pointer"
+                >
+                  Cancel
+                </button>
+                <button
+                  type="submit"
+                  disabled={subjectAdding || !newSubjectName.trim()}
+                  class="px-4 py-2 bg-blue-600 hover:bg-blue-500 text-white rounded-xl cursor-pointer disabled:opacity-50"
+                >
+                  {subjectAdding ? 'Adding...' : 'Add Subject'}
+                </button>
+              </div>
+            </form>
           </div>
         </div>
       )}
