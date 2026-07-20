@@ -193,7 +193,8 @@ export default function NotesNavigator() {
 
   const handleDownload = (note) => {
     // Open in new tab or trigger download direct stream
-    window.open(`/api/notes/download/${note.id}`, '_blank');
+    const baseUrl = import.meta.env.VITE_API_URL || '';
+    window.open(`${baseUrl}/api/notes/download/${note.id}`, '_blank');
     // Increment local download count visual
     setActiveNote(prev => prev ? { ...prev, downloadCount: prev.downloadCount + 1 } : null);
   };
@@ -807,13 +808,13 @@ export default function NotesNavigator() {
             <div class="flex-1 bg-slate-900 relative">
               {activeNote.fileType && activeNote.fileType.startsWith('image/') ? (
                 <img
-                  src={`/api/notes/preview/${activeNote.id}`}
+                  src={`${import.meta.env.VITE_API_URL || ''}/api/notes/preview/${activeNote.id}`}
                   alt={activeNote.title}
                   class="w-full h-full object-contain"
                 />
               ) : (
                 <iframe
-                  src={`/api/notes/preview/${activeNote.id}`}
+                  src={`${import.meta.env.VITE_API_URL || ''}/api/notes/preview/${activeNote.id}`}
                   title={activeNote.title}
                   class="w-full h-full border-0"
                 />

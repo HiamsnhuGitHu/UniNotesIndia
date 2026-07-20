@@ -118,7 +118,7 @@ export default function Profile() {
                   </div>
                   <div class="flex items-center gap-2 shrink-0">
                     <button
-                      onClick={() => window.open(`/api/notes/download/${b.note.id}`, '_blank')}
+                      onClick={() => window.open(`${import.meta.env.VITE_API_URL || ''}/api/notes/download/${b.note.id}`, '_blank')}
                       class="p-1.5 bg-blue-600/10 text-blue-400 rounded-lg cursor-pointer hover:bg-blue-600 hover:text-white transition"
                       title="Download"
                     >
