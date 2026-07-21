@@ -8,7 +8,7 @@
 # Local database & Maven portables
 /.mongodb/
 /.maven/
-/uploads/
+**/uploads/
 *.zip
 *.log
 
