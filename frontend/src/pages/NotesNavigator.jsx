@@ -55,10 +55,7 @@ export default function NotesNavigator() {
   const [searchQuery, setSearchQuery] = useState('');
 
   // Active details modal
-  const [activeNote, setActiveNote] = useState(() => {
-    const saved = sessionStorage.getItem('activeNote');
-    return saved ? JSON.parse(saved) : null;
-  });
+  const [activeNote, setActiveNote] = useState(null);
   const [reviews, setReviews] = useState([]);
   const [bookmarkedIds, setBookmarkedIds] = useState(new Set());
 
@@ -233,10 +230,10 @@ export default function NotesNavigator() {
     else sessionStorage.removeItem('selectedSubject');
   }, [selectedSubject]);
 
+  // Clear active note selection when navigation/selection changes
   useEffect(() => {
-    if (activeNote) sessionStorage.setItem('activeNote', JSON.stringify(activeNote));
-    else sessionStorage.removeItem('activeNote');
-  }, [activeNote]);
+    setActiveNote(null);
+  }, [selectedUni, selectedBranch, selectedSem, selectedSubject]);
 
   // Fetch reviews whenever activeNote changes (handles both user click and session recovery)
   useEffect(() => {
