@@ -35,6 +35,18 @@ export default function AdminDashboard() {
   const [branches, setBranches] = useState([]);
   const [subjects, setSubjects] = useState([]);
 
+  // Selected Directories
+  const [selectedUni, setSelectedUni] = useState(null);
+  const [selectedBranch, setSelectedBranch] = useState(null);
+  const [selectedSubject, setSelectedSubject] = useState(null);
+  const [subjectNotes, setSubjectNotes] = useState([]);
+
+  // Preview note states
+  const [previewNote, setPreviewNote] = useState(null);
+  const [showPreviewModal, setShowPreviewModal] = useState(false);
+  const [checkingPreview, setCheckingPreview] = useState(false);
+  const [previewError, setPreviewError] = useState(null);
+
   // Announcement fields
   const [notifTitle, setNotifTitle] = useState('');
   const [notifMessage, setNotifMessage] = useState('');
@@ -159,6 +171,43 @@ export default function AdminDashboard() {
     }
   };
 
+  const fetchSubjectNotes = async (uniId, branchId, subId) => {
+    try {
+      const res = await api.get('/api/notes/search', {
+        params: {
+          universityId: uniId,
+          branchId: branchId,
+          subjectId: subId
+        }
+      });
+      setSubjectNotes(res.data);
+    } catch (err) {
+      console.error("Failed to fetch subject notes:", err);
+    }
+  };
+
+  useEffect(() => {
+    if (showPreviewModal && previewNote) {
+      const checkPreview = async () => {
+        setCheckingPreview(true);
+        setPreviewError(null);
+        try {
+          await api.head(`/api/notes/preview/${previewNote.id}`);
+        } catch (err) {
+          console.error("Preview check failed:", err);
+          let errorMsg = "The file is not readable or does not exist on the server storage.";
+          if (err.response && err.response.data && err.response.data.error) {
+            errorMsg = err.response.data.error;
+          }
+          setPreviewError(errorMsg);
+        } finally {
+          setCheckingPreview(false);
+        }
+      };
+      checkPreview();
+    }
+  }, [showPreviewModal, previewNote]);
+
   const fetchReports = async () => {
     try {
       const res = await api.get('/api/admin/reports');
@@ -235,6 +284,12 @@ export default function AdminDashboard() {
     try {
       await api.delete(`/api/admin/universities/${id}`);
       showAlert('success', 'University deleted.');
+      if (selectedUni?.id === id) {
+        setSelectedUni(null);
+        setSelectedBranch(null);
+        setSelectedSubject(null);
+        setSubjectNotes([]);
+      }
       fetchDirectories();
       fetchStats();
     } catch (err) {
@@ -264,6 +319,11 @@ export default function AdminDashboard() {
     try {
       await api.delete(`/api/admin/branches/${id}`);
       showAlert('success', 'Branch deleted.');
+      if (selectedBranch?.id === id) {
+        setSelectedBranch(null);
+        setSelectedSubject(null);
+        setSubjectNotes([]);
+      }
       fetchDirectories();
       fetchStats();
     } catch (err) {
@@ -296,6 +356,10 @@ export default function AdminDashboard() {
     try {
       await api.delete(`/api/admin/subjects/${id}`);
       showAlert('success', 'Subject deleted.');
+      if (selectedSubject?.id === id) {
+        setSelectedSubject(null);
+        setSubjectNotes([]);
+      }
       fetchDirectories();
       fetchStats();
     } catch (err) {
@@ -341,6 +405,9 @@ export default function AdminDashboard() {
       showAlert('success', 'Note and associated files deleted.');
       fetchReports();
       fetchStats();
+      if (selectedSubject) {
+        fetchSubjectNotes(selectedUni.id, selectedBranch.id, selectedSubject.id);
+      }
     } catch (err) {
       showAlert('error', 'Failed to delete note.');
     }
@@ -558,13 +625,13 @@ export default function AdminDashboard() {
         </div>
       )}
 
-      {/* Tab: Directory Management (Universities, Branches, Subjects CRUD) */}
+      {/* Tab: Directory Management (Universities, Branches, Subjects CRUD, and Uploaded Materials) */}
       {activeTab === 'directories' && (
-        <div class="grid grid-cols-1 lg:grid-cols-3 gap-8">
+        <div class="grid grid-cols-1 xl:grid-cols-4 gap-6">
           
-          {/* Universities Setup */}
+          {/* Column 1: Universities */}
           <div class="space-y-4">
-            <h4 class="font-display font-bold text-white text-sm">Universities</h4>
+            <h4 class="font-display font-bold text-white text-sm">1. Universities</h4>
             <form onSubmit={handleAddUni} class="flex gap-2">
               <input
                 type="text"
@@ -576,7 +643,7 @@ export default function AdminDashboard() {
               />
               <button type="submit" class="bg-blue-600 hover:bg-blue-500 text-white rounded-lg p-2 cursor-pointer transition"><Plus size={14} /></button>
             </form>
-            <div class="max-h-64 overflow-y-auto space-y-2 pr-2">
+            <div class="max-h-[500px] overflow-y-auto space-y-2 pr-2">
               {(() => {
                 const filteredUnis = universities.filter(u =>
                   u.name.toLowerCase().includes((newUni.name || '').toLowerCase())
@@ -585,113 +652,217 @@ export default function AdminDashboard() {
                   return <div class="text-xs text-slate-500 text-center py-4">Not Found</div>;
                 }
                 return filteredUnis.map(u => (
-                  <div key={u.id} class="flex items-center justify-between bg-slate-900/40 p-2.5 rounded-lg border border-white/5">
-                    <span class="text-xs text-slate-300 font-medium truncate max-w-[150px]">{u.name}</span>
-                    <button onClick={() => handleDeleteUni(u.id)} class="text-slate-500 hover:text-rose-400 cursor-pointer transition"><Trash2 size={13} /></button>
-                  </div>
+                  <button
+                    key={u.id}
+                    onClick={() => {
+                      setSelectedUni(u);
+                      setSelectedBranch(null);
+                      setSelectedSubject(null);
+                      setSubjectNotes([]);
+                      setNewBranch(prev => ({ ...prev, universityId: String(u.id) }));
+                      setNewSubject(prev => ({ ...prev, universityId: String(u.id) }));
+                    }}
+                    class={`w-full text-left p-3 rounded-lg border text-xs font-semibold flex items-center justify-between transition ${
+                      selectedUni?.id === u.id
+                        ? 'bg-blue-600/20 border-blue-500 text-blue-400'
+                        : 'bg-slate-900/40 border-white/5 text-slate-300 hover:border-slate-700'
+                    }`}
+                  >
+                    <span class="truncate pr-2">{u.name}</span>
+                    <span onClick={(e) => {
+                      e.stopPropagation();
+                      handleDeleteUni(u.id);
+                    }} class="text-slate-500 hover:text-rose-400 cursor-pointer p-0.5 transition shrink-0">
+                      <Trash2 size={13} />
+                    </span>
+                  </button>
                 ));
               })()}
             </div>
           </div>
 
-          {/* Branches Setup */}
+          {/* Column 2: Branches */}
           <div class="space-y-4">
-            <h4 class="font-display font-bold text-white text-sm">Branches</h4>
-            <form onSubmit={handleAddBranch} class="space-y-2">
-              <select
-                required
-                value={newBranch.universityId}
-                onChange={e => setNewBranch({ ...newBranch, universityId: e.target.value })}
-                class="w-full text-xs bg-slate-900 border border-slate-700 rounded-lg p-2 text-slate-300 outline-none"
-              >
-                <option value="">Select University</option>
-                {universities.map(u => <option key={u.id} value={u.id}>{u.name}</option>)}
-              </select>
-              <div class="flex gap-2">
-                <input
-                  type="text"
-                  required
-                  value={newBranch.name}
-                  onChange={e => setNewBranch({ ...newBranch, name: e.target.value })}
-                  placeholder="Branch Name"
-                  class="flex-1 text-xs bg-slate-900 border border-slate-700 rounded-lg px-3 py-2 text-white outline-none focus:border-blue-500"
-                />
-                <button type="submit" class="bg-purple-600 hover:bg-purple-500 text-white rounded-lg p-2 cursor-pointer transition"><Plus size={14} /></button>
+            <h4 class="font-display font-bold text-white text-sm">2. Branches</h4>
+            {!selectedUni ? (
+              <div class="glass-panel border border-white/5 rounded-xl p-8 text-center text-slate-500 text-xs">
+                Select a university first to view and add branches.
               </div>
-            </form>
-            <div class="max-h-64 overflow-y-auto space-y-2 pr-2">
-              {branches.map(b => (
-                <div key={b.id} class="flex items-center justify-between bg-slate-900/40 p-2.5 rounded-lg border border-white/5">
-                  <div class="min-w-0">
-                    <span class="text-xs text-slate-300 font-medium truncate block max-w-[150px]">{b.name}</span>
-                    {b.university && (
-                      <span class="text-[9px] text-slate-500 block truncate max-w-[150px]">{b.university.name}</span>
-                    )}
+            ) : (
+              <>
+                <form onSubmit={handleAddBranch} class="space-y-2">
+                  <div class="text-[10px] text-slate-400 font-semibold uppercase">Add Branch for Selected University:</div>
+                  <div class="flex gap-2">
+                    <input
+                      type="text"
+                      required
+                      value={newBranch.name}
+                      onChange={e => setNewBranch({ ...newBranch, name: e.target.value, universityId: String(selectedUni.id) })}
+                      placeholder="Branch Name"
+                      class="flex-1 text-xs bg-slate-900 border border-slate-700 rounded-lg px-3 py-2 text-white outline-none focus:border-blue-500"
+                    />
+                    <button type="submit" class="bg-purple-600 hover:bg-purple-500 text-white rounded-lg p-2 cursor-pointer transition"><Plus size={14} /></button>
                   </div>
-                  <button onClick={() => handleDeleteBranch(b.id)} class="text-slate-500 hover:text-rose-400 cursor-pointer transition shrink-0"><Trash2 size={13} /></button>
+                </form>
+                <div class="max-h-[500px] overflow-y-auto space-y-2 pr-2">
+                  {(() => {
+                    const uniBranches = branches.filter(b => b.university?.id === selectedUni.id);
+                    if (uniBranches.length === 0) {
+                      return <div class="text-xs text-slate-500 text-center py-4">No branches found for this university.</div>;
+                    }
+                    return uniBranches.map(b => (
+                      <button
+                        key={b.id}
+                        onClick={() => {
+                          setSelectedBranch(b);
+                          setSelectedSubject(null);
+                          setSubjectNotes([]);
+                          setNewSubject(prev => ({ ...prev, branchId: String(b.id) }));
+                        }}
+                        class={`w-full text-left p-3 rounded-lg border text-xs font-semibold flex items-center justify-between transition ${
+                          selectedBranch?.id === b.id
+                            ? 'bg-purple-600/20 border-purple-500 text-purple-400'
+                            : 'bg-slate-900/40 border-white/5 text-slate-300 hover:border-slate-700'
+                        }`}
+                      >
+                        <span class="truncate pr-2">{b.name}</span>
+                        <span onClick={(e) => {
+                          e.stopPropagation();
+                          handleDeleteBranch(b.id);
+                        }} class="text-slate-500 hover:text-rose-400 cursor-pointer p-0.5 transition shrink-0">
+                          <Trash2 size={13} />
+                        </span>
+                      </button>
+                    ));
+                  })()}
                 </div>
-              ))}
-            </div>
+              </>
+            )}
           </div>
 
-          {/* Subjects Mapping Setup */}
+          {/* Column 3: Subjects */}
           <div class="space-y-4">
-            <h4 class="font-display font-bold text-white text-sm">Subjects mapping</h4>
-            <form onSubmit={handleAddSubject} class="space-y-2.5 bg-slate-900/20 border border-white/5 p-3 rounded-xl">
-              <select
-                required
-                value={newSubject.universityId}
-                onChange={e => setNewSubject({ ...newSubject, universityId: e.target.value })}
-                class="w-full text-xs bg-slate-900 border border-slate-700 rounded-lg p-2 text-slate-300 outline-none"
-              >
-                <option value="">Select University</option>
-                {universities.map(u => <option key={u.id} value={u.id}>{u.name}</option>)}
-              </select>
-              <input
-                type="text"
-                required
-                value={newSubject.name}
-                onChange={e => setNewSubject({ ...newSubject, name: e.target.value })}
-                placeholder="Subject Name"
-                class="w-full text-xs bg-slate-900 border border-slate-700 rounded-lg px-3 py-2 text-white outline-none focus:border-blue-500"
-              />
-              <div class="grid grid-cols-2 gap-2">
-                <select
-                  required
-                  value={newSubject.branchId}
-                  onChange={e => setNewSubject({ ...newSubject, branchId: e.target.value })}
-                  class="text-xs bg-slate-900 border border-slate-700 rounded-lg p-2 text-slate-300 outline-none"
-                >
-                  <option value="">Branch</option>
-                  {branches.map(b => <option key={b.id} value={b.id}>{b.name}</option>)}
-                </select>
-                <select
-                  required
-                  value={newSubject.semester}
-                  onChange={e => setNewSubject({ ...newSubject, semester: Number(e.target.value) })}
-                  class="text-xs bg-slate-900 border border-slate-700 rounded-lg p-2 text-slate-300 outline-none"
-                >
-                  {[1, 2, 3, 4, 5, 6, 7, 8].map(s => <option key={s} value={s}>Sem {s}</option>)}
-                </select>
+            <h4 class="font-display font-bold text-white text-sm">3. Subjects</h4>
+            {!selectedBranch ? (
+              <div class="glass-panel border border-white/5 rounded-xl p-8 text-center text-slate-500 text-xs">
+                Select a branch first to view and map subjects.
               </div>
-              <button type="submit" class="w-full bg-indigo-600 hover:bg-indigo-500 text-white rounded-lg py-2 text-xs font-semibold cursor-pointer transition">
-                Map Subject
-              </button>
-            </form>
-            <div class="max-h-44 overflow-y-auto space-y-2 pr-2">
-              {subjects.map(s => (
-                <div key={s.id} class="flex items-center justify-between bg-slate-900/40 p-2.5 rounded-lg border border-white/5">
-                  <div class="min-w-0">
-                    <span class="text-xs text-slate-300 font-medium truncate block max-w-[150px]">{s.name}</span>
-                    <span class="text-[9px] text-slate-500 block truncate max-w-[150px]">
-                      {s.branch?.name} • Sem {s.semester}
-                      {s.university && ` • ${s.university.name}`}
-                    </span>
+            ) : (
+              <>
+                <form onSubmit={handleAddSubject} class="space-y-2.5 bg-slate-900/20 border border-white/5 p-3 rounded-xl">
+                  <div class="text-[10px] text-slate-400 font-semibold uppercase">Map New Subject:</div>
+                  <input
+                    type="text"
+                    required
+                    value={newSubject.name}
+                    onChange={e => setNewSubject({ ...newSubject, name: e.target.value, universityId: String(selectedUni.id), branchId: String(selectedBranch.id) })}
+                    placeholder="Subject Name"
+                    class="w-full text-xs bg-slate-900 border border-slate-700 rounded-lg px-3 py-2 text-white outline-none focus:border-blue-500"
+                  />
+                  <div class="flex items-center gap-2">
+                    <select
+                      required
+                      value={newSubject.semester}
+                      onChange={e => setNewSubject({ ...newSubject, semester: Number(e.target.value) })}
+                      class="w-full text-xs bg-slate-900 border border-slate-700 rounded-lg p-2 text-slate-300 outline-none"
+                    >
+                      {[1, 2, 3, 4, 5, 6, 7, 8].map(s => <option key={s} value={s}>Sem {s}</option>)}
+                    </select>
+                    <button type="submit" class="w-full bg-indigo-600 hover:bg-indigo-500 text-white rounded-lg py-2 text-xs font-semibold cursor-pointer transition">
+                      Map Subject
+                    </button>
                   </div>
-                  <button onClick={() => handleDeleteSubject(s.id)} class="text-slate-500 hover:text-rose-400 cursor-pointer transition shrink-0"><Trash2 size={13} /></button>
+                </form>
+                <div class="max-h-[400px] overflow-y-auto space-y-2 pr-2">
+                  {(() => {
+                    const branchSubjects = subjects.filter(s => s.branch?.id === selectedBranch.id && s.university?.id === selectedUni.id);
+                    if (branchSubjects.length === 0) {
+                      return <div class="text-xs text-slate-500 text-center py-4">No subjects mapped yet.</div>;
+                    }
+                    return branchSubjects.map(s => (
+                      <button
+                        key={s.id}
+                        onClick={() => {
+                          setSelectedSubject(s);
+                          fetchSubjectNotes(selectedUni.id, selectedBranch.id, s.id);
+                        }}
+                        class={`w-full text-left p-3 rounded-lg border text-xs font-semibold flex items-center justify-between transition ${
+                          selectedSubject?.id === s.id
+                            ? 'bg-indigo-600/20 border-indigo-500 text-indigo-400'
+                            : 'bg-slate-900/40 border-white/5 text-slate-300 hover:border-slate-700'
+                        }`}
+                      >
+                        <div class="min-w-0 text-left">
+                          <span class="truncate block pr-2">{s.name}</span>
+                          <span class="text-[9px] text-slate-500 block mt-0.5">Semester {s.semester}</span>
+                        </div>
+                        <span onClick={(e) => {
+                          e.stopPropagation();
+                          handleDeleteSubject(s.id);
+                        }} class="text-slate-500 hover:text-rose-400 cursor-pointer p-0.5 transition shrink-0">
+                          <Trash2 size={13} />
+                        </span>
+                      </button>
+                    ));
+                  })()}
                 </div>
-              ))}
-            </div>
+              </>
+            )}
+          </div>
+
+          {/* Column 4: Uploaded Materials */}
+          <div class="space-y-4">
+            <h4 class="font-display font-bold text-white text-sm">4. Uploaded Materials</h4>
+            {!selectedSubject ? (
+              <div class="glass-panel border border-white/5 rounded-xl p-8 text-center text-slate-500 text-xs">
+                Select a subject first to view uploaded materials.
+              </div>
+            ) : (
+              <div class="max-h-[550px] overflow-y-auto space-y-3 pr-2">
+                {subjectNotes.length === 0 ? (
+                  <div class="text-xs text-slate-500 text-center py-6">No approved uploaded materials for this subject yet.</div>
+                ) : (
+                  subjectNotes.map(note => (
+                    <div key={note.id} class="bg-slate-900/40 border border-white/5 rounded-xl p-4 space-y-3 font-sans">
+                      <div>
+                        <h5 class="text-xs font-bold text-white leading-tight truncate" title={note.title}>{note.title}</h5>
+                        <p class="text-[10px] text-slate-400 line-clamp-2 mt-1">{note.description}</p>
+                      </div>
+                      <div class="flex flex-col gap-1 text-[9px] text-slate-500 border-t border-white/5 pt-2">
+                        <span>Uploaded By: <span class="text-slate-300 font-semibold">{note.uploadedBy?.fullName || note.uploadedBy?.username}</span></span>
+                        <span>Downloads: <span class="text-slate-300 font-semibold">{note.downloadCount}</span></span>
+                        <span>Type: <span class="text-slate-300 font-semibold">{note.noteType}</span></span>
+                        <span>Status: <span class="text-slate-300 font-semibold">{note.status}</span></span>
+                      </div>
+                      <div class="flex items-center gap-2 border-t border-white/5 pt-2">
+                        <button
+                          onClick={() => {
+                            setPreviewNote(note);
+                            setShowPreviewModal(true);
+                          }}
+                          class="flex-1 bg-slate-800 hover:bg-slate-700 text-white rounded-lg py-1.5 text-[10px] font-semibold transition cursor-pointer"
+                        >
+                          Preview
+                        </button>
+                        <button
+                          onClick={() => window.open(`${import.meta.env.VITE_API_URL || ''}/api/notes/download/${note.id}`, '_blank')}
+                          class="flex-1 bg-blue-600 hover:bg-blue-500 text-white rounded-lg py-1.5 text-[10px] font-semibold transition cursor-pointer"
+                        >
+                          Download
+                        </button>
+                        <button
+                          onClick={() => handleDeleteNoteAdmin(note.id)}
+                          class="bg-slate-800 hover:bg-rose-950 text-rose-400 rounded-lg p-1.5 transition cursor-pointer shrink-0"
+                          title="Delete Material"
+                        >
+                          <Trash2 size={12} />
+                        </button>
+                      </div>
+                    </div>
+                  ))
+                )}
+              </div>
+            )}
           </div>
 
         </div>
@@ -913,6 +1084,64 @@ export default function AdminDashboard() {
                 </button>
               </div>
             </form>
+          </div>
+        </div>
+      )}
+
+      {/* Modal: PDF/Image Inline Preview */}
+      {showPreviewModal && previewNote && (
+        <div class="fixed inset-0 z-[100] flex items-center justify-center bg-slate-950/80 backdrop-blur-sm p-4 font-sans">
+          <div class="w-full max-w-4xl h-[85vh] glass-panel rounded-2xl border border-white/10 p-6 flex flex-col space-y-4 shadow-2xl relative">
+            
+            {/* Modal Header */}
+            <div class="flex items-center justify-between border-b border-white/5 pb-3">
+              <div class="min-w-0 text-left">
+                <h3 class="font-display font-extrabold text-white text-base truncate">{previewNote.title}</h3>
+                <p class="text-[10px] text-slate-400 truncate mt-0.5">{previewNote.subject?.name} • {previewNote.noteType}</p>
+              </div>
+              <button
+                onClick={() => {
+                  setShowPreviewModal(false);
+                  setPreviewNote(null);
+                }}
+                class="text-slate-400 hover:text-white bg-slate-800/40 px-3 py-1.5 border border-slate-700/40 rounded-xl cursor-pointer transition text-xs font-semibold"
+              >
+                Close
+              </button>
+            </div>
+
+            {/* Modal Body: Embedded Preview */}
+            <div class="flex-1 bg-slate-950/40 border border-white/5 rounded-xl overflow-hidden relative flex items-center justify-center">
+              {checkingPreview ? (
+                <div class="flex flex-col items-center gap-3 text-slate-400">
+                  <div class="h-6 w-6 border-2 border-white/20 border-t-white rounded-full animate-spin"></div>
+                  <span class="text-xs font-semibold">Verifying document preview availability...</span>
+                </div>
+              ) : previewError ? (
+                <div class="max-w-md text-center p-6 space-y-3">
+                  <div class="inline-flex p-3 bg-rose-500/10 text-rose-400 rounded-2xl border border-rose-500/20 mb-2">
+                    <AlertTriangle size={24} />
+                  </div>
+                  <h4 class="font-display font-bold text-white text-base">Preview Unsuccessful</h4>
+                  <p class="text-xs text-slate-400 leading-normal">
+                    {previewError}
+                  </p>
+                </div>
+              ) : previewNote.fileType?.includes('image') ? (
+                <img
+                  src={`${import.meta.env.VITE_API_URL || ''}/api/notes/preview/${previewNote.id}`}
+                  alt="Notes document page preview"
+                  class="max-w-full max-h-full object-contain"
+                />
+              ) : (
+                <iframe
+                  src={`${import.meta.env.VITE_API_URL || ''}/api/notes/preview/${previewNote.id}`}
+                  title="Notes PDF viewer document page preview"
+                  class="w-full h-full border-none"
+                />
+              )}
+            </div>
+
           </div>
         </div>
       )}
