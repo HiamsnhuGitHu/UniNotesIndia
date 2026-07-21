@@ -4,7 +4,7 @@ import api from '../services/api';
 import { useAuth } from '../context/AuthContext';
 import {
   Folder, ArrowLeft, Star, Download, Bookmark, Flag, Eye, Trash,
-  ChevronRight, Calendar, User, FileText, CheckCircle2, MessageSquare, AlertCircle, Upload, Plus
+  ChevronRight, ChevronLeft, Calendar, User, FileText, CheckCircle2, MessageSquare, AlertCircle, Upload, Plus
 } from 'lucide-react';
 
 export default function NotesNavigator() {
@@ -450,69 +450,134 @@ export default function NotesNavigator() {
 
           {/* Level 1: Select University */}
           {!selectedUni && (
-            <div class="space-y-4">
-              <h2 class="font-display text-2xl font-extrabold text-white">Select University</h2>
-              <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                {universities.map((u) => (
-                  <button
-                    key={u.id}
-                    onClick={() => setSelectedUni(u)}
-                    class="glass-panel glass-panel-hover rounded-xl p-5 text-left border border-white/5 cursor-pointer flex flex-col justify-between h-28"
-                  >
-                    <Folder className="h-6 w-6 text-blue-500 mb-2" />
-                    <div>
-                      <span class="font-semibold text-white text-sm line-clamp-1">{u.name}</span>
-                      <span class="text-xs text-slate-400 mt-1 block">{u.city}</span>
+            <div class="space-y-6 text-left">
+              <div class="flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-4 bg-slate-900/20 border border-white/5 p-4 rounded-2xl">
+                <div class="space-y-1">
+                  <h4 class="font-display font-extrabold text-white text-base">Select University</h4>
+                  <p class="text-[10px] text-slate-500 font-sans">Select a university to view its engineering branches.</p>
+                </div>
+                <div class="sm:max-w-xs w-full">
+                  <input
+                    type="text"
+                    value={searchQuery}
+                    onChange={e => setSearchQuery(e.target.value)}
+                    placeholder="Search University..."
+                    class="w-full text-xs bg-slate-900 border border-slate-700 rounded-lg px-3 py-2 text-white outline-none focus:border-blue-500 font-sans"
+                  />
+                </div>
+              </div>
+
+              <div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4">
+                {(() => {
+                  const filteredUnis = universities.filter(u =>
+                    u.name.toLowerCase().includes((searchQuery || '').toLowerCase())
+                  );
+                  if (universities.length === 0) {
+                    return <div class="col-span-full text-xs text-slate-500 text-center py-8 font-sans">No universities registered.</div>;
+                  }
+                  if (searchQuery && filteredUnis.length === 0) {
+                    return <div class="col-span-full text-xs text-slate-500 text-center py-8 font-sans">Not Found</div>;
+                  }
+                  return filteredUnis.map(u => (
+                    <div 
+                      key={u.id}
+                      onClick={() => {
+                        setSelectedUni(u);
+                        setSelectedBranch(null);
+                        setSelectedSem(null);
+                        setSelectedSubject(null);
+                        setNotes([]);
+                      }}
+                      class="bg-slate-900/40 hover:bg-slate-900/70 border border-white/5 hover:border-blue-500/40 p-4 rounded-xl flex items-center justify-between gap-3 cursor-pointer group transition duration-300 shadow-md relative overflow-hidden h-14"
+                    >
+                      <div class="absolute -right-6 -bottom-6 w-16 h-16 bg-blue-500/5 rounded-full group-hover:scale-150 transition-all duration-300"></div>
+                      <span class="text-xs font-bold text-slate-300 group-hover:text-white truncate relative z-10 font-sans">{u.name}</span>
                     </div>
-                  </button>
-                ))}
+                  ));
+                })()}
               </div>
             </div>
           )}
 
           {/* Level 2: Select Branch */}
           {selectedUni && !selectedBranch && (
-            <div class="space-y-4">
-              <div class="flex items-center gap-3">
-                <button onClick={resetToUni} class="p-1.5 rounded-lg bg-slate-900 border border-slate-700/60 text-slate-400 hover:text-white cursor-pointer">
-                  <ArrowLeft size={16} />
+            <div class="space-y-6 text-left">
+              <div class="flex items-center gap-3 bg-slate-900/20 border border-white/5 p-4 rounded-2xl">
+                <button 
+                  onClick={resetToUni}
+                  class="p-2 bg-slate-800 hover:bg-slate-700 text-slate-300 hover:text-white rounded-lg border border-white/5 cursor-pointer transition"
+                  title="Back to Universities"
+                >
+                  <ChevronLeft size={16} />
                 </button>
-                <h2 class="font-display text-2xl font-extrabold text-white">Select Branch</h2>
+                <div class="space-y-1">
+                  <h4 class="font-display font-extrabold text-white text-base">Select Branch</h4>
+                  <p class="text-[10px] text-slate-500 font-sans">Browsing branches of <span class="text-purple-400 font-semibold">{selectedUni.name}</span>.</p>
+                </div>
               </div>
-              <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                {branches.map((b) => (
-                  <button
-                    key={b.id}
-                    onClick={() => setSelectedBranch(b)}
-                    class="glass-panel glass-panel-hover rounded-xl p-4 text-left border border-white/5 cursor-pointer flex items-center gap-3"
-                  >
-                    <Folder className="h-5 w-5 text-purple-400 shrink-0" />
-                    <span class="font-semibold text-white text-sm">{b.name}</span>
-                  </button>
-                ))}
+
+              <div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4">
+                {(() => {
+                  const uniBranches = branches.filter(b => !b.university || b.university.id === selectedUni.id);
+                  if (uniBranches.length === 0) {
+                    return (
+                      <div class="col-span-full glass-panel border border-white/5 rounded-xl p-8 text-center text-slate-500 text-xs font-sans">
+                        No branches registered under this university yet.
+                      </div>
+                    );
+                  }
+                  return uniBranches.map(b => (
+                    <div 
+                      key={b.id}
+                      onClick={() => {
+                        setSelectedBranch(b);
+                        setSelectedSem(null);
+                        setSelectedSubject(null);
+                        setNotes([]);
+                      }}
+                      class="bg-slate-900/40 hover:bg-slate-900/70 border border-white/5 hover:border-purple-500/40 p-4 rounded-xl flex items-center justify-between gap-3 cursor-pointer group transition duration-300 shadow-md relative overflow-hidden h-14"
+                    >
+                      <div class="absolute -right-6 -bottom-6 w-16 h-16 bg-purple-500/5 rounded-full group-hover:scale-150 transition-all duration-300"></div>
+                      <span class="text-xs font-bold text-slate-300 group-hover:text-white truncate relative z-10 font-sans">{b.name}</span>
+                    </div>
+                  ));
+                })()}
               </div>
             </div>
           )}
 
           {/* Level 3: Select Semester */}
           {selectedUni && selectedBranch && !selectedSem && (
-            <div class="space-y-4">
-              <div class="flex items-center gap-3">
-                <button onClick={resetToBranch} class="p-1.5 rounded-lg bg-slate-900 border border-slate-700/60 text-slate-400 hover:text-white cursor-pointer">
-                  <ArrowLeft size={16} />
+            <div class="space-y-6 text-left">
+              <div class="flex items-center gap-3 bg-slate-900/20 border border-white/5 p-4 rounded-2xl">
+                <button 
+                  onClick={resetToBranch}
+                  class="p-2 bg-slate-800 hover:bg-slate-700 text-slate-300 hover:text-white rounded-lg border border-white/5 cursor-pointer transition"
+                  title="Back to Branches"
+                >
+                  <ChevronLeft size={16} />
                 </button>
-                <h2 class="font-display text-2xl font-extrabold text-white">Select Semester</h2>
+                <div class="space-y-1">
+                  <h4 class="font-display font-extrabold text-white text-base">Select Semester</h4>
+                  <p class="text-[10px] text-slate-500 font-sans">Browsing semesters of <span class="text-purple-400 font-semibold">{selectedBranch.name}</span>.</p>
+                </div>
               </div>
+
               <div class="grid grid-cols-2 sm:grid-cols-4 gap-4">
-                {[1, 2, 3, 4, 5, 6, 7, 8].map((sem) => (
-                  <button
+                {[1, 2, 3, 4, 5, 6, 7, 8].map(sem => (
+                  <div 
                     key={sem}
-                    onClick={() => setSelectedSem(sem)}
-                    class="glass-panel glass-panel-hover rounded-xl p-6 text-center border border-white/5 cursor-pointer flex flex-col items-center justify-center gap-2"
+                    onClick={() => {
+                      setSelectedSem(sem);
+                      setSelectedSubject(null);
+                      setNotes([]);
+                    }}
+                    class="bg-slate-900/40 hover:bg-slate-950/70 border border-white/5 hover:border-blue-500/40 p-8 rounded-xl flex flex-col items-center justify-center cursor-pointer group transition duration-300 shadow-md text-center relative overflow-hidden"
                   >
-                    <span class="text-3xl font-extrabold text-indigo-400 font-display">{sem}</span>
-                    <span class="text-xs text-slate-400 uppercase tracking-widest font-bold">Semester</span>
-                  </button>
+                    <div class="absolute -right-6 -bottom-6 w-16 h-16 bg-blue-500/5 rounded-full group-hover:scale-150 transition-all duration-300"></div>
+                    <span class="text-4xl font-extrabold text-blue-500 group-hover:text-blue-400 font-display transition duration-300 relative z-10">{sem}</span>
+                    <span class="text-[10px] font-bold text-slate-400 uppercase tracking-widest mt-2 group-hover:text-white transition duration-300 relative z-10 font-sans">Semester</span>
+                  </div>
                 ))}
               </div>
             </div>
@@ -520,64 +585,68 @@ export default function NotesNavigator() {
 
           {/* Level 4: Select Subject */}
           {selectedUni && selectedBranch && selectedSem && !selectedSubject && (
-            <div class="space-y-4">
-              <div class="flex items-center justify-between">
-                <div class="flex items-center gap-3">
-                  <button onClick={resetToSem} class="p-1.5 rounded-lg bg-slate-900 border border-slate-700/60 text-slate-400 hover:text-white cursor-pointer">
-                    <ArrowLeft size={16} />
-                  </button>
-                  <h2 class="font-display text-2xl font-extrabold text-white">Select Subject</h2>
-                </div>
-                <button
-                  onClick={() => setShowSubjectModal(true)}
-                  class="flex items-center gap-1.5 px-3.5 py-1.5 bg-blue-600 hover:bg-blue-500 text-white rounded-xl text-xs font-semibold cursor-pointer transition shadow shadow-blue-500/20"
+            <div class="space-y-6 text-left">
+              <div class="flex items-center gap-3 bg-slate-900/20 border border-white/5 p-4 rounded-2xl">
+                <button 
+                  onClick={resetToSem}
+                  class="p-2 bg-slate-800 hover:bg-slate-700 text-slate-300 hover:text-white rounded-lg border border-white/5 cursor-pointer transition"
+                  title="Back to Semesters"
                 >
-                  <Plus size={14} />
-                  <span>Add New Subject</span>
+                  <ChevronLeft size={16} />
                 </button>
+                <div class="space-y-1">
+                  <h4 class="font-display font-extrabold text-white text-base">Select Subject</h4>
+                  <p class="text-[10px] text-slate-500 font-sans">Browsing subjects of Semester {selectedSem} in <span class="text-indigo-400 font-semibold">{selectedBranch.name}</span>.</p>
+                </div>
               </div>
 
-              {subjects.length === 0 ? (
-                <div class="glass-panel rounded-xl p-8 text-center text-slate-400 space-y-4 flex flex-col items-center justify-center">
-                  <p>No subjects registered for this semester yet.</p>
-                  <button
-                    onClick={() => setShowSubjectModal(true)}
-                    class="flex items-center gap-1.5 px-4 py-2 bg-blue-600 hover:bg-blue-500 text-white rounded-xl text-xs font-semibold cursor-pointer transition shadow shadow-blue-500/20"
-                  >
-                    <Plus size={14} />
-                    <span>Add New Subject</span>
-                  </button>
-                </div>
-              ) : (
-                <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                  {subjects.map((sub) => (
-                    <button
-                      key={sub.id}
-                      onClick={() => setSelectedSubject(sub)}
-                      class="glass-panel glass-panel-hover rounded-xl p-4 text-left border border-white/5 cursor-pointer flex items-center gap-3"
+              <div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4">
+                {(() => {
+                  const branchSubjects = subjects.filter(s => !s.university || s.university.id === selectedUni.id);
+                  if (branchSubjects.length === 0) {
+                    return (
+                      <div class="col-span-full glass-panel border border-white/5 rounded-xl p-8 text-center text-slate-500 text-xs font-sans">
+                        No subjects mapped under this semester yet.
+                      </div>
+                    );
+                  }
+                  return branchSubjects.map(s => (
+                    <div 
+                      key={s.id}
+                      onClick={() => setSelectedSubject(s)}
+                      class="bg-slate-900/40 hover:bg-slate-900/70 border border-white/5 hover:border-indigo-500/40 p-4 rounded-xl flex items-center justify-between gap-3 cursor-pointer group transition duration-300 shadow-md relative overflow-hidden h-14"
                     >
-                      <FileText className="h-5 w-5 text-blue-400 shrink-0" />
-                      <span class="font-semibold text-white text-sm">{sub.name}</span>
-                    </button>
-                  ))}
-                </div>
-              )}
+                      <div class="absolute -right-6 -bottom-6 w-16 h-16 bg-indigo-500/5 rounded-full group-hover:scale-150 transition-all duration-300"></div>
+                      <div class="min-w-0 relative z-10 text-left font-sans flex-1">
+                        <span class="text-xs font-bold text-slate-300 group-hover:text-white truncate block">{s.name}</span>
+                      </div>
+                    </div>
+                  ));
+                })()}
+              </div>
             </div>
           )}
 
           {/* Level 5: Notes Grid */}
           {selectedUni && selectedBranch && selectedSem && selectedSubject && (
-            <div class="space-y-4">
-              <div class="flex items-center justify-between">
+            <div class="space-y-6 text-left">
+              <div class="flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-4 bg-slate-900/20 border border-white/5 p-4 rounded-2xl">
                 <div class="flex items-center gap-3">
-                  <button onClick={resetToSubject} class="p-1.5 rounded-lg bg-slate-900 border border-slate-700/60 text-slate-400 hover:text-white cursor-pointer">
-                    <ArrowLeft size={16} />
+                  <button 
+                    onClick={resetToSubject}
+                    class="p-2 bg-slate-800 hover:bg-slate-700 text-slate-300 hover:text-white rounded-lg border border-white/5 cursor-pointer transition"
+                    title="Back to Subjects"
+                  >
+                    <ChevronLeft size={16} />
                   </button>
-                  <h2 class="font-display text-2xl font-extrabold text-white">Available Notes</h2>
+                  <div class="space-y-1">
+                    <h4 class="font-display font-extrabold text-white text-base">Available Notes</h4>
+                    <p class="text-[10px] text-slate-500 font-sans">Showing documents matching subject: <span class="text-emerald-400 font-semibold">{selectedSubject.name}</span>.</p>
+                  </div>
                 </div>
                 <button
                   onClick={handleUploadNotesRedirect}
-                  class="flex items-center gap-1.5 px-4 py-2 bg-blue-600 hover:bg-blue-500 text-white rounded-xl text-xs font-semibold cursor-pointer transition shadow shadow-blue-500/20"
+                  class="flex items-center gap-1.5 px-4 py-2 bg-blue-600 hover:bg-blue-500 text-white rounded-xl text-xs font-semibold cursor-pointer transition shadow shadow-blue-500/20 animate-pulse"
                 >
                   <Upload size={14} />
                   <span>Upload Notes</span>
