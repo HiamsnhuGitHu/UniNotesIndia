@@ -773,7 +773,7 @@ export default function AdminDashboard() {
 
               <div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
                 {(() => {
-                  const uniBranches = branches.filter(b => b.university?.id === selectedUni.id);
+                  const uniBranches = branches.filter(b => !b.university || b.university.id === selectedUni.id);
                   if (uniBranches.length === 0) {
                     return (
                       <div class="col-span-full glass-panel border border-white/5 rounded-xl p-8 text-center text-slate-500 text-xs font-sans">
@@ -842,7 +842,7 @@ export default function AdminDashboard() {
 
               <div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
                 {(() => {
-                  const branchSubjects = subjects.filter(s => s.branch?.id === selectedBranch.id && s.university?.id === selectedUni.id);
+                  const branchSubjects = subjects.filter(s => (!s.university || s.university.id === selectedUni.id) && s.branch?.id === selectedBranch.id);
                   if (branchSubjects.length === 0) {
                     return (
                       <div class="col-span-full glass-panel border border-white/5 rounded-xl p-8 text-center text-slate-500 text-xs font-sans">
