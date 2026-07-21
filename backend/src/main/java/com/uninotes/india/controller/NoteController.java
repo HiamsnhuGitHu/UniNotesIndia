@@ -215,6 +215,43 @@ public class NoteController {
         return noteRepository.findByUploadedBy(user);
     }
 
+    @GetMapping("/api/notes/contributor-stats")
+    public ResponseEntity<?> getContributorStats() {
+        User user = (User) SecurityContextHolder.getContext().getAuthentication().getPrincipal();
+        List<Note> myNotes = noteRepository.findByUploadedBy(user);
+
+        long totalUploaded = myNotes.size();
+        long totalApproved = myNotes.stream().filter(n -> "APPROVED".equalsIgnoreCase(n.getStatus())).count();
+        long totalDownloads = myNotes.stream().mapToLong(Note::getDownloadCount).sum();
+
+        double avgRating = 0.0;
+        long totalReviewsCount = 0;
+        double sumRating = 0;
+
+        for (Note note : myNotes) {
+            List<Review> reviews = reviewRepository.findByNoteId(note.getId());
+            for (Review r : reviews) {
+                sumRating += r.getRating();
+                totalReviewsCount++;
+            }
+        }
+
+        if (totalReviewsCount > 0) {
+            avgRating = sumRating / totalReviewsCount;
+        }
+
+        avgRating = Math.round(avgRating * 10.0) / 10.0;
+
+        Map<String, Object> stats = new HashMap<>();
+        stats.put("totalUploaded", totalUploaded);
+        stats.put("totalApproved", totalApproved);
+        stats.put("totalDownloads", totalDownloads);
+        stats.put("averageRating", avgRating);
+        stats.put("totalReviews", totalReviewsCount);
+
+        return ResponseEntity.ok(stats);
+    }
+
     // Review endpoints
     @PostMapping("/api/notes/{id}/reviews")
     public ResponseEntity<?> addReview(@PathVariable Long id, @RequestBody Map<String, Object> payload) {

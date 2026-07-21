@@ -9,6 +9,13 @@ export default function Profile() {
   // Lists
   const [bookmarks, setBookmarks] = useState([]);
   const [uploads, setUploads] = useState([]);
+  const [stats, setStats] = useState({
+    totalUploaded: 0,
+    totalApproved: 0,
+    totalDownloads: 0,
+    averageRating: 0.0,
+    totalReviews: 0
+  });
 
   const [loading, setLoading] = useState(false);
   const [alert, setAlert] = useState({ type: '', text: '' });
@@ -19,12 +26,14 @@ export default function Profile() {
 
   const fetchProfileData = async () => {
     try {
-      const [bmarkRes, uploadsRes] = await Promise.all([
+      const [bmarkRes, uploadsRes, statsRes] = await Promise.all([
         api.get('/api/notes/bookmarks'),
-        api.get('/api/notes/my-uploads') // Fetch all user uploads (both approved and pending)
+        api.get('/api/notes/my-uploads'),
+        api.get('/api/notes/contributor-stats')
       ]);
       setBookmarks(bmarkRes.data);
       setUploads(uploadsRes.data);
+      setStats(statsRes.data);
     } catch (err) {
       console.error('Failed to load profile lists', err);
     }
@@ -91,6 +100,55 @@ export default function Profile() {
               <p class="text-slate-200 mt-0.5">{user?.mobileNumber}</p>
             </div>
           </div>
+        </div>
+      </div>
+
+      {/* Contributor Stats Dashboard */}
+      <div class="glass-panel border border-white/10 rounded-2xl p-6 shadow-xl relative overflow-hidden">
+        <div class="absolute -bottom-32 -right-32 w-72 h-72 bg-indigo-500/10 rounded-full blur-3xl"></div>
+        <h3 class="font-display font-extrabold text-white text-sm mb-4 flex items-center gap-2 relative z-10">
+          <GraduationCap size={16} className="text-blue-400" />
+          <span>My Contributor Metrics</span>
+        </h3>
+        
+        <div class="grid grid-cols-1 sm:grid-cols-3 gap-4 relative z-10 text-xs">
+          
+          <div class="bg-slate-900/40 p-4 rounded-xl border border-white/5 space-y-1.5">
+            <div class="flex items-center justify-between">
+              <span class="text-[9px] text-slate-500 font-semibold uppercase tracking-wider font-sans">Total Notes Uploaded</span>
+              <Upload size={13} className="text-blue-400" />
+            </div>
+            <div class="flex items-baseline gap-2">
+              <span class="text-xl font-extrabold text-white font-display">{stats.totalUploaded}</span>
+              <span class="text-[9px] text-emerald-400 font-semibold">({stats.totalApproved} Approved)</span>
+            </div>
+          </div>
+
+          <div class="bg-slate-900/40 p-4 rounded-xl border border-white/5 space-y-1.5">
+            <div class="flex items-center justify-between">
+              <span class="text-[9px] text-slate-500 font-semibold uppercase tracking-wider font-sans">Total Downloads</span>
+              <Upload size={13} className="text-purple-400 rotate-180" />
+            </div>
+            <div>
+              <span class="text-xl font-extrabold text-white font-display">{stats.totalDownloads}</span>
+            </div>
+          </div>
+
+          <div class="bg-slate-900/40 p-4 rounded-xl border border-white/5 space-y-1.5">
+            <div class="flex items-center justify-between">
+              <span class="text-[9px] text-slate-500 font-semibold uppercase tracking-wider font-sans">Average Rating</span>
+              <span class="text-yellow-400 text-xs font-bold font-sans">★</span>
+            </div>
+            <div class="flex items-baseline gap-1.5">
+              <span class="text-xl font-extrabold text-white font-display">
+                {stats.averageRating > 0 ? stats.averageRating : 'N/A'}
+              </span>
+              {stats.totalReviews > 0 && (
+                <span class="text-[9px] text-slate-400 font-semibold">({stats.totalReviews} reviews)</span>
+              )}
+            </div>
+          </div>
+
         </div>
       </div>
 
