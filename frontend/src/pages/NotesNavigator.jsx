@@ -325,14 +325,15 @@ export default function NotesNavigator() {
 
   const handleAddSubject = async (e) => {
     e.preventDefault();
-    if (!newSubjectName.trim() || !selectedBranch) return;
+    if (!newSubjectName.trim() || !selectedBranch || !selectedUni) return;
 
     setSubjectAdding(true);
     try {
       const response = await api.post('/api/subjects', {
         name: newSubjectName.trim(),
         branch: selectedBranch,
-        semester: Number(selectedSem)
+        semester: Number(selectedSem),
+        university: selectedUni
       });
 
       const newSub = response.data;
@@ -586,18 +587,31 @@ export default function NotesNavigator() {
           {/* Level 4: Select Subject */}
           {selectedUni && selectedBranch && selectedSem && !selectedSubject && (
             <div class="space-y-6 text-left">
-              <div class="flex items-center gap-3 bg-slate-900/20 border border-white/5 p-4 rounded-2xl">
-                <button 
-                  onClick={resetToSem}
-                  class="p-2 bg-slate-800 hover:bg-slate-700 text-slate-300 hover:text-white rounded-lg border border-white/5 cursor-pointer transition"
-                  title="Back to Semesters"
-                >
-                  <ChevronLeft size={16} />
-                </button>
-                <div class="space-y-1">
-                  <h4 class="font-display font-extrabold text-white text-base">Select Subject</h4>
-                  <p class="text-[10px] text-slate-500 font-sans">Browsing subjects of Semester {selectedSem} in <span class="text-indigo-400 font-semibold">{selectedBranch.name}</span>.</p>
+              <div class="flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-4 bg-slate-900/20 border border-white/5 p-4 rounded-2xl">
+                <div class="flex items-center gap-3">
+                  <button 
+                    onClick={resetToSem}
+                    class="p-2 bg-slate-800 hover:bg-slate-700 text-slate-300 hover:text-white rounded-lg border border-white/5 cursor-pointer transition"
+                    title="Back to Semesters"
+                  >
+                    <ChevronLeft size={16} />
+                  </button>
+                  <div class="space-y-1">
+                    <h4 class="font-display font-extrabold text-white text-base">Select Subject</h4>
+                    <p class="text-[10px] text-slate-500 font-sans">Browsing subjects of Semester {selectedSem} in <span class="text-indigo-400 font-semibold">{selectedBranch.name}</span>.</p>
+                  </div>
                 </div>
+                <form onSubmit={handleAddSubject} class="flex items-center gap-2 sm:max-w-md w-full">
+                  <input
+                    type="text"
+                    required
+                    value={newSubjectName}
+                    onChange={e => setNewSubjectName(e.target.value)}
+                    placeholder="Add missing subject..."
+                    class="flex-1 text-xs bg-slate-900 border border-slate-700 rounded-lg px-3 py-2 text-white outline-none focus:border-blue-500 font-sans"
+                  />
+                  <button type="submit" class="bg-indigo-600 hover:bg-indigo-500 text-white rounded-lg p-2 cursor-pointer transition shrink-0" title="Add Subject"><Plus size={14} /></button>
+                </form>
               </div>
 
               <div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4">
