@@ -627,214 +627,288 @@ export default function AdminDashboard() {
 
       {/* Tab: Directory Management (Universities, Branches, Subjects CRUD, and Uploaded Materials) */}
       {activeTab === 'directories' && (
-        <div class="grid grid-cols-1 xl:grid-cols-4 gap-6">
+        <div class="space-y-6">
           
-          {/* Column 1: Universities */}
-          <div class="space-y-4">
-            <h4 class="font-display font-bold text-white text-sm">1. Universities</h4>
-            <form onSubmit={handleAddUni} class="flex gap-2">
-              <input
-                type="text"
-                required
-                value={newUni.name}
-                onChange={e => setNewUni({ ...newUni, name: e.target.value })}
-                placeholder="University Name"
-                class="flex-1 text-xs bg-slate-900 border border-slate-700 rounded-lg px-3 py-2 text-white outline-none focus:border-blue-500"
-              />
-              <button type="submit" class="bg-blue-600 hover:bg-blue-500 text-white rounded-lg p-2 cursor-pointer transition"><Plus size={14} /></button>
-            </form>
-            <div class="max-h-[500px] overflow-y-auto space-y-2 pr-2">
-              {(() => {
-                const filteredUnis = universities.filter(u =>
-                  u.name.toLowerCase().includes((newUni.name || '').toLowerCase())
-                );
-                if (newUni.name && filteredUnis.length === 0) {
-                  return <div class="text-xs text-slate-500 text-center py-4">Not Found</div>;
-                }
-                return filteredUnis.map(u => (
-                  <button
-                    key={u.id}
-                    onClick={() => {
-                      setSelectedUni(u);
-                      setSelectedBranch(null);
-                      setSelectedSubject(null);
-                      setSubjectNotes([]);
-                      setNewBranch(prev => ({ ...prev, universityId: String(u.id) }));
-                      setNewSubject(prev => ({ ...prev, universityId: String(u.id) }));
-                    }}
-                    class={`w-full text-left p-3 rounded-lg border text-xs font-semibold flex items-center justify-between transition ${
-                      selectedUni?.id === u.id
-                        ? 'bg-blue-600/20 border-blue-500 text-blue-400'
-                        : 'bg-slate-900/40 border-white/5 text-slate-300 hover:border-slate-700'
-                    }`}
-                  >
-                    <span class="truncate pr-2">{u.name}</span>
-                    <span onClick={(e) => {
-                      e.stopPropagation();
-                      handleDeleteUni(u.id);
-                    }} class="text-slate-500 hover:text-rose-400 cursor-pointer p-0.5 transition shrink-0">
-                      <Trash2 size={13} />
-                    </span>
-                  </button>
-                ));
-              })()}
-            </div>
-          </div>
-
-          {/* Column 2: Branches */}
-          <div class="space-y-4">
-            <h4 class="font-display font-bold text-white text-sm">2. Branches</h4>
-            {!selectedUni ? (
-              <div class="glass-panel border border-white/5 rounded-xl p-8 text-center text-slate-500 text-xs">
-                Select a university first to view and add branches.
-              </div>
-            ) : (
+          {/* File Explorer Breadcrumbs */}
+          <div class="flex flex-wrap items-center gap-2 text-xs font-semibold text-slate-400 bg-slate-900/40 px-4 py-3 rounded-xl border border-white/5">
+            <button 
+              onClick={() => {
+                setSelectedUni(null);
+                setSelectedBranch(null);
+                setSelectedSubject(null);
+                setSubjectNotes([]);
+              }} 
+              class="hover:text-blue-400 cursor-pointer transition font-sans"
+            >
+              Universities
+            </button>
+            
+            {selectedUni && (
               <>
-                <form onSubmit={handleAddBranch} class="space-y-2">
-                  <div class="text-[10px] text-slate-400 font-semibold uppercase">Add Branch for Selected University:</div>
-                  <div class="flex gap-2">
-                    <input
-                      type="text"
-                      required
-                      value={newBranch.name}
-                      onChange={e => setNewBranch({ ...newBranch, name: e.target.value, universityId: String(selectedUni.id) })}
-                      placeholder="Branch Name"
-                      class="flex-1 text-xs bg-slate-900 border border-slate-700 rounded-lg px-3 py-2 text-white outline-none focus:border-blue-500"
-                    />
-                    <button type="submit" class="bg-purple-600 hover:bg-purple-500 text-white rounded-lg p-2 cursor-pointer transition"><Plus size={14} /></button>
-                  </div>
-                </form>
-                <div class="max-h-[500px] overflow-y-auto space-y-2 pr-2">
-                  {(() => {
-                    const uniBranches = branches.filter(b => b.university?.id === selectedUni.id);
-                    if (uniBranches.length === 0) {
-                      return <div class="text-xs text-slate-500 text-center py-4">No branches found for this university.</div>;
-                    }
-                    return uniBranches.map(b => (
-                      <button
-                        key={b.id}
-                        onClick={() => {
-                          setSelectedBranch(b);
-                          setSelectedSubject(null);
-                          setSubjectNotes([]);
-                          setNewSubject(prev => ({ ...prev, branchId: String(b.id) }));
-                        }}
-                        class={`w-full text-left p-3 rounded-lg border text-xs font-semibold flex items-center justify-between transition ${
-                          selectedBranch?.id === b.id
-                            ? 'bg-purple-600/20 border-purple-500 text-purple-400'
-                            : 'bg-slate-900/40 border-white/5 text-slate-300 hover:border-slate-700'
-                        }`}
-                      >
-                        <span class="truncate pr-2">{b.name}</span>
-                        <span onClick={(e) => {
-                          e.stopPropagation();
-                          handleDeleteBranch(b.id);
-                        }} class="text-slate-500 hover:text-rose-400 cursor-pointer p-0.5 transition shrink-0">
-                          <Trash2 size={13} />
-                        </span>
-                      </button>
-                    ));
-                  })()}
-                </div>
+                <span class="text-slate-600">/</span>
+                <button 
+                  onClick={() => {
+                    setSelectedBranch(null);
+                    setSelectedSubject(null);
+                    setSubjectNotes([]);
+                  }} 
+                  class="hover:text-purple-400 cursor-pointer transition max-w-[200px] truncate font-sans"
+                  title={selectedUni.name}
+                >
+                  {selectedUni.name}
+                </button>
+              </>
+            )}
+
+            {selectedBranch && (
+              <>
+                <span class="text-slate-600">/</span>
+                <button 
+                  onClick={() => {
+                    setSelectedSubject(null);
+                    setSubjectNotes([]);
+                  }} 
+                  class="hover:text-indigo-400 cursor-pointer transition max-w-[200px] truncate font-sans"
+                  title={selectedBranch.name}
+                >
+                  {selectedBranch.name}
+                </button>
+              </>
+            )}
+
+            {selectedSubject && (
+              <>
+                <span class="text-slate-600">/</span>
+                <span class="text-white max-w-[200px] truncate font-bold font-sans" title={selectedSubject.name}>
+                  {selectedSubject.name}
+                </span>
               </>
             )}
           </div>
 
-          {/* Column 3: Subjects */}
-          <div class="space-y-4">
-            <h4 class="font-display font-bold text-white text-sm">3. Subjects</h4>
-            {!selectedBranch ? (
-              <div class="glass-panel border border-white/5 rounded-xl p-8 text-center text-slate-500 text-xs">
-                Select a branch first to view and map subjects.
+          {/* Step 1: Universities List */}
+          {!selectedUni && (
+            <div class="space-y-6">
+              <div class="flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-4 bg-slate-900/20 border border-white/5 p-4 rounded-2xl">
+                <div class="space-y-1">
+                  <h4 class="font-display font-extrabold text-white text-base">Select University</h4>
+                  <p class="text-[10px] text-slate-500 font-sans">Select a university to view its engineering branches.</p>
+                </div>
+                <form onSubmit={handleAddUni} class="flex items-center gap-2 sm:max-w-xs w-full">
+                  <input
+                    type="text"
+                    required
+                    value={newUni.name}
+                    onChange={e => setNewUni({ ...newUni, name: e.target.value })}
+                    placeholder="Search or Add University..."
+                    class="w-full text-xs bg-slate-900 border border-slate-700 rounded-lg px-3 py-2 text-white outline-none focus:border-blue-500 font-sans"
+                  />
+                  <button type="submit" class="bg-blue-600 hover:bg-blue-500 text-white rounded-lg p-2 cursor-pointer transition shrink-0" title="Add University"><Plus size={14} /></button>
+                </form>
               </div>
-            ) : (
-              <>
-                <form onSubmit={handleAddSubject} class="space-y-2.5 bg-slate-900/20 border border-white/5 p-3 rounded-xl">
-                  <div class="text-[10px] text-slate-400 font-semibold uppercase">Map New Subject:</div>
+
+              <div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
+                {(() => {
+                  const filteredUnis = universities.filter(u =>
+                    u.name.toLowerCase().includes((newUni.name || '').toLowerCase())
+                  );
+                  if (universities.length === 0) {
+                    return <div class="col-span-full text-xs text-slate-500 text-center py-8 font-sans">No universities registered in the system.</div>;
+                  }
+                  if (newUni.name && filteredUnis.length === 0) {
+                    return <div class="col-span-full text-xs text-slate-500 text-center py-8 font-sans">Not Found</div>;
+                  }
+                  return filteredUnis.map(u => (
+                    <div 
+                      key={u.id}
+                      onClick={() => {
+                        setSelectedUni(u);
+                        setSelectedBranch(null);
+                        setSelectedSubject(null);
+                        setSubjectNotes([]);
+                        setNewBranch(prev => ({ ...prev, universityId: String(u.id) }));
+                        setNewSubject(prev => ({ ...prev, universityId: String(u.id) }));
+                      }}
+                      class="bg-slate-900/40 hover:bg-slate-900/70 border border-white/5 hover:border-blue-500/40 p-4 rounded-xl flex items-center justify-between gap-3 cursor-pointer group transition duration-300 shadow-md relative overflow-hidden"
+                    >
+                      <div class="absolute -right-6 -bottom-6 w-16 h-16 bg-blue-500/5 rounded-full group-hover:scale-150 transition-all duration-300"></div>
+                      <span class="text-xs font-bold text-slate-300 group-hover:text-white truncate pr-2 relative z-10 font-sans">{u.name}</span>
+                      <button 
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          handleDeleteUni(u.id);
+                        }} 
+                        class="text-slate-500 hover:text-rose-400 p-1 rounded hover:bg-rose-500/10 cursor-pointer transition shrink-0 relative z-10"
+                        title="Delete University"
+                      >
+                        <Trash2 size={13} />
+                      </button>
+                    </div>
+                  ));
+                })()}
+              </div>
+            </div>
+          )}
+
+          {/* Step 2: Branches List */}
+          {selectedUni && !selectedBranch && (
+            <div class="space-y-6">
+              <div class="flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-4 bg-slate-900/20 border border-white/5 p-4 rounded-2xl">
+                <div class="space-y-1">
+                  <h4 class="font-display font-extrabold text-white text-base">Select Branch</h4>
+                  <p class="text-[10px] text-slate-500 font-sans">Currently browsing engineering branches of <span class="text-purple-400 font-semibold">{selectedUni.name}</span>.</p>
+                </div>
+                <form onSubmit={handleAddBranch} class="flex items-center gap-2 sm:max-w-xs w-full">
+                  <input
+                    type="text"
+                    required
+                    value={newBranch.name}
+                    onChange={e => setNewBranch({ ...newBranch, name: e.target.value, universityId: String(selectedUni.id) })}
+                    placeholder="Add new branch name..."
+                    class="w-full text-xs bg-slate-900 border border-slate-700 rounded-lg px-3 py-2 text-white outline-none focus:border-blue-500 font-sans"
+                  />
+                  <button type="submit" class="bg-purple-600 hover:bg-purple-500 text-white rounded-lg p-2 cursor-pointer transition shrink-0" title="Add Branch"><Plus size={14} /></button>
+                </form>
+              </div>
+
+              <div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
+                {(() => {
+                  const uniBranches = branches.filter(b => b.university?.id === selectedUni.id);
+                  if (uniBranches.length === 0) {
+                    return (
+                      <div class="col-span-full glass-panel border border-white/5 rounded-xl p-8 text-center text-slate-500 text-xs font-sans">
+                        No branches registered under this university yet.
+                      </div>
+                    );
+                  }
+                  return uniBranches.map(b => (
+                    <div 
+                      key={b.id}
+                      onClick={() => {
+                        setSelectedBranch(b);
+                        setSelectedSubject(null);
+                        setSubjectNotes([]);
+                        setNewSubject(prev => ({ ...prev, branchId: String(b.id) }));
+                      }}
+                      class="bg-slate-900/40 hover:bg-slate-900/70 border border-white/5 hover:border-purple-500/40 p-4 rounded-xl flex items-center justify-between gap-3 cursor-pointer group transition duration-300 shadow-md relative overflow-hidden"
+                    >
+                      <div class="absolute -right-6 -bottom-6 w-16 h-16 bg-purple-500/5 rounded-full group-hover:scale-150 transition-all duration-300"></div>
+                      <span class="text-xs font-bold text-slate-300 group-hover:text-white truncate pr-2 relative z-10 font-sans">{b.name}</span>
+                      <button 
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          handleDeleteBranch(b.id);
+                        }} 
+                        class="text-slate-500 hover:text-rose-400 p-1 rounded hover:bg-rose-500/10 cursor-pointer transition shrink-0 relative z-10"
+                        title="Delete Branch"
+                      >
+                        <Trash2 size={13} />
+                      </button>
+                    </div>
+                  ));
+                })()}
+              </div>
+            </div>
+          )}
+
+          {/* Step 3: Subjects List */}
+          {selectedUni && selectedBranch && !selectedSubject && (
+            <div class="space-y-6">
+              <div class="flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-4 bg-slate-900/20 border border-white/5 p-4 rounded-2xl">
+                <div class="space-y-1">
+                  <h4 class="font-display font-extrabold text-white text-base">Select Subject</h4>
+                  <p class="text-[10px] text-slate-500 font-sans">Currently browsing subjects of <span class="text-indigo-400 font-semibold">{selectedBranch.name}</span>.</p>
+                </div>
+                <form onSubmit={handleAddSubject} class="flex flex-wrap items-center gap-2 sm:max-w-md w-full">
                   <input
                     type="text"
                     required
                     value={newSubject.name}
                     onChange={e => setNewSubject({ ...newSubject, name: e.target.value, universityId: String(selectedUni.id), branchId: String(selectedBranch.id) })}
                     placeholder="Subject Name"
-                    class="w-full text-xs bg-slate-900 border border-slate-700 rounded-lg px-3 py-2 text-white outline-none focus:border-blue-500"
+                    class="flex-1 text-xs bg-slate-900 border border-slate-700 rounded-lg px-3 py-2 text-white outline-none focus:border-blue-500 min-w-[150px] font-sans"
                   />
-                  <div class="flex items-center gap-2">
-                    <select
-                      required
-                      value={newSubject.semester}
-                      onChange={e => setNewSubject({ ...newSubject, semester: Number(e.target.value) })}
-                      class="w-full text-xs bg-slate-900 border border-slate-700 rounded-lg p-2 text-slate-300 outline-none"
-                    >
-                      {[1, 2, 3, 4, 5, 6, 7, 8].map(s => <option key={s} value={s}>Sem {s}</option>)}
-                    </select>
-                    <button type="submit" class="w-full bg-indigo-600 hover:bg-indigo-500 text-white rounded-lg py-2 text-xs font-semibold cursor-pointer transition">
-                      Map Subject
-                    </button>
-                  </div>
+                  <select
+                    required
+                    value={newSubject.semester}
+                    onChange={e => setNewSubject({ ...newSubject, semester: Number(e.target.value) })}
+                    class="text-xs bg-slate-900 border border-slate-700 rounded-lg p-2 text-slate-300 outline-none font-sans"
+                  >
+                    {[1, 2, 3, 4, 5, 6, 7, 8].map(s => <option key={s} value={s}>Sem {s}</option>)}
+                  </select>
+                  <button type="submit" class="bg-indigo-600 hover:bg-indigo-500 text-white rounded-lg p-2 cursor-pointer transition shrink-0" title="Map Subject"><Plus size={14} /></button>
                 </form>
-                <div class="max-h-[400px] overflow-y-auto space-y-2 pr-2">
-                  {(() => {
-                    const branchSubjects = subjects.filter(s => s.branch?.id === selectedBranch.id && s.university?.id === selectedUni.id);
-                    if (branchSubjects.length === 0) {
-                      return <div class="text-xs text-slate-500 text-center py-4">No subjects mapped yet.</div>;
-                    }
-                    return branchSubjects.map(s => (
-                      <button
-                        key={s.id}
-                        onClick={() => {
-                          setSelectedSubject(s);
-                          fetchSubjectNotes(selectedUni.id, selectedBranch.id, s.id);
-                        }}
-                        class={`w-full text-left p-3 rounded-lg border text-xs font-semibold flex items-center justify-between transition ${
-                          selectedSubject?.id === s.id
-                            ? 'bg-indigo-600/20 border-indigo-500 text-indigo-400'
-                            : 'bg-slate-900/40 border-white/5 text-slate-300 hover:border-slate-700'
-                        }`}
-                      >
-                        <div class="min-w-0 text-left">
-                          <span class="truncate block pr-2">{s.name}</span>
-                          <span class="text-[9px] text-slate-500 block mt-0.5">Semester {s.semester}</span>
-                        </div>
-                        <span onClick={(e) => {
+              </div>
+
+              <div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
+                {(() => {
+                  const branchSubjects = subjects.filter(s => s.branch?.id === selectedBranch.id && s.university?.id === selectedUni.id);
+                  if (branchSubjects.length === 0) {
+                    return (
+                      <div class="col-span-full glass-panel border border-white/5 rounded-xl p-8 text-center text-slate-500 text-xs font-sans">
+                        No subjects mapped under this branch yet.
+                      </div>
+                    );
+                  }
+                  return branchSubjects.map(s => (
+                    <div 
+                      key={s.id}
+                      onClick={() => {
+                        setSelectedSubject(s);
+                        fetchSubjectNotes(selectedUni.id, selectedBranch.id, s.id);
+                      }}
+                      class="bg-slate-900/40 hover:bg-slate-900/70 border border-white/5 hover:border-indigo-500/40 p-4 rounded-xl flex items-center justify-between gap-3 cursor-pointer group transition duration-300 shadow-md relative overflow-hidden"
+                    >
+                      <div class="absolute -right-6 -bottom-6 w-16 h-16 bg-indigo-500/5 rounded-full group-hover:scale-150 transition-all duration-300"></div>
+                      <div class="min-w-0 relative z-10 text-left pr-2 font-sans">
+                        <span class="text-xs font-bold text-slate-300 group-hover:text-white truncate block">{s.name}</span>
+                        <span class="text-[9px] text-slate-500 block mt-0.5">Semester {s.semester}</span>
+                      </div>
+                      <button 
+                        onClick={(e) => {
                           e.stopPropagation();
                           handleDeleteSubject(s.id);
-                        }} class="text-slate-500 hover:text-rose-400 cursor-pointer p-0.5 transition shrink-0">
-                          <Trash2 size={13} />
-                        </span>
+                        }} 
+                        class="text-slate-500 hover:text-rose-400 p-1 rounded hover:bg-rose-500/10 cursor-pointer transition shrink-0 relative z-10"
+                        title="Delete Subject"
+                      >
+                        <Trash2 size={13} />
                       </button>
-                    ));
-                  })()}
-                </div>
-              </>
-            )}
-          </div>
-
-          {/* Column 4: Uploaded Materials */}
-          <div class="space-y-4">
-            <h4 class="font-display font-bold text-white text-sm">4. Uploaded Materials</h4>
-            {!selectedSubject ? (
-              <div class="glass-panel border border-white/5 rounded-xl p-8 text-center text-slate-500 text-xs">
-                Select a subject first to view uploaded materials.
+                    </div>
+                  ));
+                })()}
               </div>
-            ) : (
-              <div class="max-h-[550px] overflow-y-auto space-y-3 pr-2">
+            </div>
+          )}
+
+          {/* Step 4: Uploaded Materials List */}
+          {selectedUni && selectedBranch && selectedSubject && (
+            <div class="space-y-6">
+              <div class="bg-slate-900/20 border border-white/5 p-4 rounded-2xl">
+                <h4 class="font-display font-extrabold text-white text-base">Uploaded Materials</h4>
+                <p class="text-[10px] text-slate-500 font-sans">Currently showing documents matching subject: <span class="text-emerald-400 font-semibold">{selectedSubject.name}</span>.</p>
+              </div>
+
+              <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
                 {subjectNotes.length === 0 ? (
-                  <div class="text-xs text-slate-500 text-center py-6">No approved uploaded materials for this subject yet.</div>
+                  <div class="col-span-full glass-panel border border-white/5 rounded-xl p-8 text-center text-slate-500 text-xs font-sans">
+                    No approved notes uploaded for this subject yet.
+                  </div>
                 ) : (
                   subjectNotes.map(note => (
-                    <div key={note.id} class="bg-slate-900/40 border border-white/5 rounded-xl p-4 space-y-3 font-sans">
-                      <div>
+                    <div key={note.id} class="bg-slate-900/40 border border-white/5 rounded-xl p-4 space-y-3 relative overflow-hidden group shadow-md hover:border-emerald-500/30 transition duration-300 font-sans">
+                      <div class="absolute -right-6 -bottom-6 w-16 h-16 bg-emerald-500/5 rounded-full group-hover:scale-150 transition-all duration-300"></div>
+                      <div class="relative z-10">
                         <h5 class="text-xs font-bold text-white leading-tight truncate" title={note.title}>{note.title}</h5>
                         <p class="text-[10px] text-slate-400 line-clamp-2 mt-1">{note.description}</p>
                       </div>
-                      <div class="flex flex-col gap-1 text-[9px] text-slate-500 border-t border-white/5 pt-2">
+                      <div class="flex flex-col gap-1 text-[9px] text-slate-500 border-t border-white/5 pt-2 relative z-10">
                         <span>Uploaded By: <span class="text-slate-300 font-semibold">{note.uploadedBy?.fullName || note.uploadedBy?.username}</span></span>
                         <span>Downloads: <span class="text-slate-300 font-semibold">{note.downloadCount}</span></span>
                         <span>Type: <span class="text-slate-300 font-semibold">{note.noteType}</span></span>
                         <span>Status: <span class="text-slate-300 font-semibold">{note.status}</span></span>
                       </div>
-                      <div class="flex items-center gap-2 border-t border-white/5 pt-2">
+                      <div class="flex items-center gap-2 border-t border-white/5 pt-2 relative z-10">
                         <button
                           onClick={() => {
                             setPreviewNote(note);
@@ -862,8 +936,8 @@ export default function AdminDashboard() {
                   ))
                 )}
               </div>
-            )}
-          </div>
+            </div>
+          )}
 
         </div>
       )}
