@@ -27,6 +27,8 @@ export default function AdminDashboard() {
   // States
   const [stats, setStats] = useState({ totalUsers: 0, totalUniversities: 0, totalNotes: 0, totalDownloads: 0 });
   const [pendingNotes, setPendingNotes] = useState([]);
+  const [approvalSubTab, setApprovalSubTab] = useState('pending');
+  const [approvedNotes, setApprovedNotes] = useState([]);
   const [usersList, setUsersList] = useState([]);
   const [reports, setReports] = useState([]);
 
@@ -133,11 +135,17 @@ export default function AdminDashboard() {
 
   useEffect(() => {
     fetchStats();
-    if (activeTab === 'approvals') fetchPendingNotes();
+    if (activeTab === 'approvals') {
+      if (approvalSubTab === 'pending') {
+        fetchPendingNotes();
+      } else {
+        fetchApprovedNotes();
+      }
+    }
     if (activeTab === 'users') fetchUsers();
     if (activeTab === 'directories') fetchDirectories();
     if (activeTab === 'reports') fetchReports();
-  }, [activeTab]);
+  }, [activeTab, approvalSubTab]);
 
   const fetchStats = async () => {
     try {
@@ -152,6 +160,15 @@ export default function AdminDashboard() {
     try {
       const res = await api.get('/api/admin/notes/pending');
       setPendingNotes(res.data);
+    } catch (err) {
+      console.error(err);
+    }
+  };
+
+  const fetchApprovedNotes = async () => {
+    try {
+      const res = await api.get('/api/notes/search');
+      setApprovedNotes(res.data);
     } catch (err) {
       console.error(err);
     }
@@ -272,6 +289,7 @@ export default function AdminDashboard() {
       await api.put(`/api/admin/notes/${id}/approve`);
       showAlert('success', 'Note approved successfully.');
       fetchPendingNotes();
+      fetchApprovedNotes();
       fetchStats();
     } catch (err) {
       showAlert('error', 'Failed to approve note.');
@@ -284,9 +302,22 @@ export default function AdminDashboard() {
       await api.put(`/api/admin/notes/${id}/reject`);
       showAlert('success', 'Note rejected and deleted.');
       fetchPendingNotes();
+      fetchApprovedNotes();
       fetchStats();
     } catch (err) {
       showAlert('error', 'Failed to reject note.');
+    }
+  };
+
+  const handleDeleteApprovedNote = async (id) => {
+    if (!window.confirm('Delete note and physical file permanently?')) return;
+    try {
+      await api.delete(`/api/admin/notes/${id}`);
+      showAlert('success', 'Note deleted.');
+      fetchApprovedNotes();
+      fetchStats();
+    } catch (err) {
+      showAlert('error', 'Failed to delete note.');
     }
   };
 
@@ -571,40 +602,153 @@ export default function AdminDashboard() {
         </div>
       )}
 
-      {/* Tab: Pending Approvals */}
+      {/* Tab: Pending / Approved Moderation Queue */}
       {activeTab === 'approvals' && (
-        <div class="space-y-4">
-          <h3 class="font-display font-bold text-white text-lg">Pending Notes Queue</h3>
-          {pendingNotes.length === 0 ? (
-            <div class="glass-panel border border-white/5 rounded-xl p-8 text-center text-slate-500 text-xs">
-              No notes awaiting moderation approval.
+        <div class="space-y-6">
+          <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+            <h3 class="font-display font-bold text-white text-lg">Moderation & Note Approvals</h3>
+            
+            {/* Sub Tabs Toggle */}
+            <div class="flex items-center gap-2 bg-slate-900/40 p-1 rounded-xl border border-white/5 self-start sm:self-auto shrink-0">
+              <button
+                onClick={() => setApprovalSubTab('pending')}
+                class={`px-4 py-1.5 rounded-lg text-xs font-semibold uppercase tracking-wider transition cursor-pointer ${
+                  approvalSubTab === 'pending'
+                    ? 'bg-blue-600 text-white shadow shadow-blue-500/20'
+                    : 'text-slate-400 hover:text-white'
+                }`}
+              >
+                Pending Queue ({pendingNotes.length})
+              </button>
+              <button
+                onClick={() => setApprovalSubTab('approved')}
+                class={`px-4 py-1.5 rounded-lg text-xs font-semibold uppercase tracking-wider transition cursor-pointer ${
+                  approvalSubTab === 'approved'
+                    ? 'bg-blue-600 text-white shadow shadow-blue-500/20'
+                    : 'text-slate-400 hover:text-white'
+                }`}
+              >
+                Approved Notes ({approvedNotes.length})
+              </button>
+            </div>
+          </div>
+
+          {approvalSubTab === 'pending' ? (
+            <div class="space-y-4">
+              {pendingNotes.length === 0 ? (
+                <div class="glass-panel border border-white/5 rounded-xl p-8 text-center text-slate-500 text-xs font-sans">
+                  No notes awaiting moderation approval.
+                </div>
+              ) : (
+                <div class="space-y-4">
+                  {pendingNotes.map(note => (
+                    <div key={note.id} class="bg-slate-900/40 border border-white/5 p-4 rounded-xl flex flex-col md:flex-row md:items-center justify-between gap-4 hover:border-blue-500/20 transition duration-300 font-sans">
+                      <div class="space-y-2 text-left">
+                        <div class="flex flex-wrap items-center gap-2">
+                          <h4 class="text-xs font-bold text-white leading-tight">{note.title}</h4>
+                          <span class="px-2 py-0.5 rounded text-[8px] font-bold uppercase tracking-wider bg-amber-500/10 text-amber-400 border border-amber-500/20">
+                            {note.noteType?.replace('_', ' ')}
+                          </span>
+                        </div>
+                        {note.description && <p class="text-[10px] text-slate-400 max-w-2xl leading-relaxed">{note.description}</p>}
+                        
+                        <div class="flex flex-wrap items-center gap-x-4 gap-y-1 text-[9px] text-slate-500">
+                          <span>Uploader: <span class="text-slate-300 font-semibold">{note.uploadedBy?.fullName || note.uploadedBy?.username} (@{note.uploadedBy?.username})</span></span>
+                          <span>Uploaded At: <span class="text-slate-300 font-semibold">{note.uploadDate ? new Date(note.uploadDate).toLocaleString() : 'N/A'}</span></span>
+                        </div>
+
+                        <div class="text-[9px] text-slate-400 font-mono bg-slate-950/40 px-2 py-1 rounded inline-block">
+                          <span class="text-slate-500 uppercase tracking-widest font-semibold mr-1.5">Location:</span>
+                          {note.university?.name} / {note.branch?.name} / Sem {note.semester} / <span class="text-blue-400">{note.subject?.name}</span>
+                        </div>
+                      </div>
+
+                      <div class="flex items-center gap-2 self-end md:self-auto shrink-0">
+                        <button
+                          onClick={() => {
+                            setPreviewNote(note);
+                            setShowPreviewModal(true);
+                          }}
+                          class="px-3 py-1.5 bg-slate-800 hover:bg-slate-700 text-white rounded-lg text-[10px] font-semibold cursor-pointer transition border border-white/5"
+                        >
+                          Preview
+                        </button>
+                        <button
+                          onClick={() => handleApproveNote(note.id)}
+                          class="px-3 py-1.5 bg-emerald-600/25 hover:bg-emerald-600 text-emerald-400 hover:text-white border border-emerald-500/20 rounded-lg cursor-pointer transition text-[10px] font-semibold"
+                        >
+                          Approve
+                        </button>
+                        <button
+                          onClick={() => handleRejectNote(note.id)}
+                          class="px-3 py-1.5 bg-rose-600/25 hover:bg-rose-600 text-rose-400 hover:text-white border border-rose-500/20 rounded-lg cursor-pointer transition text-[10px] font-semibold"
+                        >
+                          Reject
+                        </button>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              )}
             </div>
           ) : (
-            <div class="space-y-3">
-              {pendingNotes.map(note => (
-                <div key={note.id} class="glass-panel border border-white/5 p-4 rounded-xl flex items-center justify-between gap-4">
-                  <div>
-                    <h4 class="text-xs font-bold text-white">{note.title}</h4>
-                    <p class="text-[10px] text-slate-400 mt-1">
-                      Uploaded by <span class="text-blue-400">@{note.uploadedBy?.username}</span> • {note.university?.name} • {note.noteType}
-                    </p>
-                  </div>
-                  <div class="flex gap-2">
-                    <button
-                      onClick={() => handleApproveNote(note.id)}
-                      class="p-2 bg-emerald-600/20 hover:bg-emerald-600/40 text-emerald-400 hover:text-white border border-emerald-500/20 rounded-lg cursor-pointer transition text-xs font-semibold"
-                    >
-                      Approve
-                    </button>
-                    <button
-                      onClick={() => handleRejectNote(note.id)}
-                      class="p-2 bg-rose-600/20 hover:bg-rose-600/40 text-rose-400 hover:text-white border border-rose-500/20 rounded-lg cursor-pointer transition text-xs font-semibold"
-                    >
-                      Reject
-                    </button>
-                  </div>
+            <div class="space-y-4">
+              {approvedNotes.length === 0 ? (
+                <div class="glass-panel border border-white/5 rounded-xl p-8 text-center text-slate-500 text-xs font-sans">
+                  No approved notes found in the system.
                 </div>
-              ))}
+              ) : (
+                <div class="space-y-4">
+                  {approvedNotes.map(note => (
+                    <div key={note.id} class="bg-slate-900/40 border border-white/5 p-4 rounded-xl flex flex-col md:flex-row md:items-center justify-between gap-4 hover:border-emerald-500/20 transition duration-300 font-sans">
+                      <div class="space-y-2 text-left">
+                        <div class="flex flex-wrap items-center gap-2">
+                          <h4 class="text-xs font-bold text-white leading-tight">{note.title}</h4>
+                          <span class="px-2 py-0.5 rounded text-[8px] font-bold uppercase tracking-wider bg-emerald-500/10 text-emerald-400 border border-emerald-500/20">
+                            {note.noteType?.replace('_', ' ')}
+                          </span>
+                        </div>
+                        {note.description && <p class="text-[10px] text-slate-400 max-w-2xl leading-relaxed">{note.description}</p>}
+                        
+                        <div class="flex flex-wrap items-center gap-x-4 gap-y-1 text-[9px] text-slate-500">
+                          <span>Uploader: <span class="text-slate-300 font-semibold">{note.uploadedBy?.fullName || note.uploadedBy?.username} ({note.uploadedBy?.username})</span></span>
+                          <span>Uploaded At: <span class="text-slate-300 font-semibold">{note.uploadDate ? new Date(note.uploadDate).toLocaleString() : 'N/A'}</span></span>
+                          <span>Downloads: <span class="text-slate-300 font-bold">{note.downloadCount}</span></span>
+                        </div>
+
+                        <div class="text-[9px] text-slate-400 font-mono bg-slate-950/40 px-2 py-1 rounded inline-block">
+                          <span class="text-slate-500 uppercase tracking-widest font-semibold mr-1.5">Location:</span>
+                          {note.university?.name} / {note.branch?.name} / Sem {note.semester} / <span class="text-emerald-400">{note.subject?.name}</span>
+                        </div>
+                      </div>
+
+                      <div class="flex items-center gap-2 self-end md:self-auto shrink-0">
+                        <button
+                          onClick={() => {
+                            setPreviewNote(note);
+                            setShowPreviewModal(true);
+                          }}
+                          class="px-3 py-1.5 bg-slate-800 hover:bg-slate-700 text-white rounded-lg text-[10px] font-semibold cursor-pointer transition border border-white/5"
+                        >
+                          Preview
+                        </button>
+                        <button
+                          onClick={() => window.open(`${import.meta.env.VITE_API_URL || ''}/api/notes/download/${note.id}`, '_blank')}
+                          class="px-3 py-1.5 bg-blue-600 hover:bg-blue-500 text-white rounded-lg text-[10px] font-semibold transition cursor-pointer"
+                        >
+                          Download
+                        </button>
+                        <button
+                          onClick={() => handleDeleteApprovedNote(note.id)}
+                          class="px-3 py-1.5 bg-rose-600/20 hover:bg-rose-600 text-rose-400 hover:text-white rounded-lg border border-rose-500/20 transition cursor-pointer text-[10px] font-semibold"
+                        >
+                          Delete
+                        </button>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              )}
             </div>
           )}
         </div>
