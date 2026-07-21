@@ -1867,34 +1867,67 @@ export default function AdminDashboard() {
                 </div>
               ) : (
                 <div class="space-y-4">
-                  {userHistoryLogs.map((log) => (
-                    <div key={log.id} class="space-y-1.5">
-                      <div class="flex items-center justify-between text-[10px] text-slate-500 font-mono px-1">
-                        <span>Updated by: <span class="text-slate-300 font-semibold font-mono">@{log.changedBy}</span></span>
-                        <span>{new Date(log.timestamp).toLocaleString()}</span>
-                      </div>
-                      <div class="bg-slate-900/40 border border-white/5 rounded-xl p-3 text-xs space-y-2 text-left">
-                        <div class="font-bold text-slate-300 flex items-center gap-1.5 font-display">
-                          <span class="h-1.5 w-1.5 rounded-full bg-blue-500"></span>
-                          <span>{log.fieldName}</span>
+                  {(() => {
+                    const grouped = [];
+                    userHistoryLogs.forEach(log => {
+                      const logTime = new Date(log.timestamp).getTime();
+                      const existing = grouped.find(g => 
+                        g.changedBy === log.changedBy && 
+                        Math.abs(new Date(g.timestamp).getTime() - logTime) < 2500
+                      );
+                      if (existing) {
+                        existing.fields.push({
+                          fieldName: log.fieldName,
+                          oldValue: log.oldValue,
+                          newValue: log.newValue
+                        });
+                      } else {
+                        grouped.push({
+                          id: log.id,
+                          changedBy: log.changedBy,
+                          timestamp: log.timestamp,
+                          fields: [{
+                            fieldName: log.fieldName,
+                            oldValue: log.oldValue,
+                            newValue: log.newValue
+                          }]
+                        });
+                      }
+                    });
+
+                    return grouped.map((group) => (
+                      <div key={group.id} class="space-y-1.5">
+                        <div class="flex items-center justify-between text-[10px] text-slate-500 font-mono px-1">
+                          <span>Updated by: <span class="text-slate-300 font-semibold font-mono">@{group.changedBy}</span></span>
+                          <span>{new Date(group.timestamp).toLocaleString()}</span>
                         </div>
-                        <div class="grid grid-cols-2 gap-3 font-sans">
-                          <div class="bg-slate-950/40 p-2 rounded-lg border border-white/5 min-w-0">
-                            <span class="text-[9px] text-slate-500 uppercase block font-semibold">Previous</span>
-                            <span class="text-rose-400/90 line-through truncate block mt-0.5" title={log.oldValue}>
-                              {log.oldValue || 'N/A'}
-                            </span>
-                          </div>
-                          <div class="bg-slate-950/40 p-2 rounded-lg border border-white/5 min-w-0">
-                            <span class="text-[9px] text-slate-500 uppercase block font-semibold">Updated</span>
-                            <span class="text-emerald-400 font-semibold truncate block mt-0.5" title={log.newValue}>
-                              {log.newValue || 'N/A'}
-                            </span>
-                          </div>
+                        <div class="bg-slate-900/40 border border-white/5 rounded-xl p-4 text-xs space-y-4 text-left">
+                          {group.fields.map((field, fIdx) => (
+                            <div key={fIdx} class="space-y-2 pb-3 last:pb-0 border-b border-white/5 last:border-0">
+                              <div class="font-bold text-slate-300 flex items-center gap-1.5 font-display">
+                                <span class="h-1.5 w-1.5 rounded-full bg-blue-500"></span>
+                                <span>{field.fieldName}</span>
+                              </div>
+                              <div class="grid grid-cols-2 gap-3 font-sans">
+                                <div class="bg-slate-950/40 p-2 rounded-lg border border-white/5 min-w-0">
+                                  <span class="text-[9px] text-slate-500 uppercase block font-semibold font-sans">Previous</span>
+                                  <span class="text-rose-400/90 line-through truncate block mt-0.5" title={field.oldValue}>
+                                    {field.oldValue || 'N/A'}
+                                  </span>
+                                </div>
+                                <div class="bg-slate-950/40 p-2 rounded-lg border border-white/5 min-w-0">
+                                  <span class="text-[9px] text-slate-500 uppercase block font-semibold font-sans">Updated</span>
+                                  <span class="text-emerald-400 font-semibold truncate block mt-0.5" title={field.newValue}>
+                                    {field.newValue || 'N/A'}
+                                  </span>
+                                </div>
+                              </div>
+                            </div>
+                          ))}
                         </div>
                       </div>
-                    </div>
-                  ))}
+                    ));
+                  })()}
                 </div>
               )}
             </div>
