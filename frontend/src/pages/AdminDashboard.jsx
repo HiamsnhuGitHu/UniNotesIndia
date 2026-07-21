@@ -29,6 +29,7 @@ export default function AdminDashboard() {
   const [pendingNotes, setPendingNotes] = useState([]);
   const [approvalSubTab, setApprovalSubTab] = useState('pending');
   const [approvedNotes, setApprovedNotes] = useState([]);
+  const [deleteRequests, setDeleteRequests] = useState([]);
   const [usersList, setUsersList] = useState([]);
   const [reports, setReports] = useState([]);
 
@@ -145,6 +146,7 @@ export default function AdminDashboard() {
     if (activeTab === 'users') fetchUsers();
     if (activeTab === 'directories') fetchDirectories();
     if (activeTab === 'reports') fetchReports();
+    if (activeTab === 'requests') fetchDeleteRequests();
   }, [activeTab, approvalSubTab]);
 
   const fetchStats = async () => {
@@ -169,6 +171,15 @@ export default function AdminDashboard() {
     try {
       const res = await api.get('/api/notes/search');
       setApprovedNotes(res.data);
+    } catch (err) {
+      console.error(err);
+    }
+  };
+
+  const fetchDeleteRequests = async () => {
+    try {
+      const res = await api.get('/api/admin/delete-requests');
+      setDeleteRequests(res.data);
     } catch (err) {
       console.error(err);
     }
@@ -310,6 +321,24 @@ export default function AdminDashboard() {
   };
 
   const handleDeleteApprovedNote = async (id) => {
+    const noteObj = approvedNotes.find(n => n.id === id);
+    const noteTitle = noteObj ? noteObj.title : 'Unknown Material';
+
+    if (isSubAdmin) {
+      if (!window.confirm(`Request deletion of approved material "${noteTitle}"?`)) return;
+      try {
+        await api.post('/api/admin/delete-requests', {
+          requestType: 'NOTE',
+          targetId: id,
+          targetName: noteTitle
+        });
+        showAlert('success', 'Deletion request submitted for Admin approval.');
+      } catch (err) {
+        showAlert('error', 'Failed to submit deletion request.');
+      }
+      return;
+    }
+
     if (!window.confirm('Delete note and physical file permanently?')) return;
     try {
       await api.delete(`/api/admin/notes/${id}`);
@@ -360,6 +389,24 @@ export default function AdminDashboard() {
   };
 
   const handleDeleteUni = async (id) => {
+    const uni = universities.find(u => u.id === id);
+    const name = uni ? uni.name : 'Unknown University';
+
+    if (isSubAdmin) {
+      if (!window.confirm(`Request deletion of university "${name}"?`)) return;
+      try {
+        await api.post('/api/admin/delete-requests', {
+          requestType: 'UNIVERSITY',
+          targetId: id,
+          targetName: name
+        });
+        showAlert('success', 'Deletion request submitted for Admin approval.');
+      } catch (err) {
+        showAlert('error', 'Failed to submit deletion request.');
+      }
+      return;
+    }
+
     if (!window.confirm('Deleting university will cascade delete all associated subjects and physical notes! Proceed?')) return;
     try {
       await api.delete(`/api/admin/universities/${id}`);
@@ -396,6 +443,24 @@ export default function AdminDashboard() {
   };
 
   const handleDeleteBranch = async (id) => {
+    const branch = branches.find(b => b.id === id);
+    const name = branch ? branch.name : 'Unknown Branch';
+
+    if (isSubAdmin) {
+      if (!window.confirm(`Request deletion of branch "${name}"?`)) return;
+      try {
+        await api.post('/api/admin/delete-requests', {
+          requestType: 'BRANCH',
+          targetId: id,
+          targetName: name
+        });
+        showAlert('success', 'Deletion request submitted for Admin approval.');
+      } catch (err) {
+        showAlert('error', 'Failed to submit deletion request.');
+      }
+      return;
+    }
+
     if (!window.confirm('Deleting branch will cascade delete all associated physical note files! Proceed?')) return;
     try {
       await api.delete(`/api/admin/branches/${id}`);
@@ -434,6 +499,24 @@ export default function AdminDashboard() {
   };
 
   const handleDeleteSubject = async (id) => {
+    const sub = subjects.find(s => s.id === id);
+    const name = sub ? sub.name : 'Unknown Subject';
+
+    if (isSubAdmin) {
+      if (!window.confirm(`Request deletion of subject "${name}"?`)) return;
+      try {
+        await api.post('/api/admin/delete-requests', {
+          requestType: 'SUBJECT',
+          targetId: id,
+          targetName: name
+        });
+        showAlert('success', 'Deletion request submitted for Admin approval.');
+      } catch (err) {
+        showAlert('error', 'Failed to submit deletion request.');
+      }
+      return;
+    }
+
     if (!window.confirm('Deleting subject will cascade delete associated note files from disk. Proceed?')) return;
     try {
       await api.delete(`/api/admin/subjects/${id}`);
@@ -481,6 +564,25 @@ export default function AdminDashboard() {
   };
 
   const handleDeleteNoteAdmin = async (noteId) => {
+    let noteTitle = 'Unknown Material';
+    const noteObj = subjectNotes.find(n => n.id === noteId) || reports.find(r => r.note?.id === noteId)?.note;
+    if (noteObj) noteTitle = noteObj.title;
+
+    if (isSubAdmin) {
+      if (!window.confirm(`Request deletion of material "${noteTitle}"?`)) return;
+      try {
+        await api.post('/api/admin/delete-requests', {
+          requestType: 'NOTE',
+          targetId: noteId,
+          targetName: noteTitle
+        });
+        showAlert('success', 'Deletion request submitted for Admin approval.');
+      } catch (err) {
+        showAlert('error', 'Failed to submit deletion request.');
+      }
+      return;
+    }
+
     if (!window.confirm('Delete note and physical file permanently? This will dismiss all reports against it.')) return;
     try {
       await api.delete(`/api/admin/notes/${noteId}`);
@@ -492,6 +594,28 @@ export default function AdminDashboard() {
       }
     } catch (err) {
       showAlert('error', 'Failed to delete note.');
+    }
+  };
+
+  const handleApproveDeleteRequest = async (requestId) => {
+    try {
+      await api.put(`/api/admin/delete-requests/${requestId}/approve`);
+      showAlert('success', 'Deletion request approved and executed.');
+      fetchDeleteRequests();
+      fetchDirectories();
+      fetchStats();
+    } catch (err) {
+      showAlert('error', 'Failed to approve deletion request.');
+    }
+  };
+
+  const handleRejectDeleteRequest = async (requestId) => {
+    try {
+      await api.put(`/api/admin/delete-requests/${requestId}/reject`);
+      showAlert('success', 'Deletion request rejected.');
+      fetchDeleteRequests();
+    } catch (err) {
+      showAlert('error', 'Failed to reject deletion request.');
     }
   };
 
@@ -521,8 +645,8 @@ export default function AdminDashboard() {
 
       {/* Navigation Tabs */}
       <div class="flex items-center gap-2 border-b border-white/5 pb-2 overflow-x-auto">
-        {['stats', 'approvals', 'users', 'directories', 'announcements', 'reports']
-          .filter(tab => !(isSubAdmin && tab === 'users'))
+        {['stats', 'approvals', 'users', 'directories', 'announcements', 'reports', 'requests']
+          .filter(tab => !(isSubAdmin && (tab === 'users' || tab === 'requests')))
           .map(tab => (
             <button
               key={tab}
@@ -533,7 +657,7 @@ export default function AdminDashboard() {
                   : 'text-slate-400 hover:text-white hover:bg-slate-900/40'
               }`}
             >
-              {tab}
+              {tab === 'requests' ? 'Requests' : tab}
             </button>
           ))}
       </div>
@@ -1334,6 +1458,51 @@ export default function AdminDashboard() {
                   <div class="border-t border-white/5 pt-3 flex justify-between text-[10px] text-slate-500">
                     <span>Flagged by: <span class="text-blue-400">@{report.user?.username}</span></span>
                     <span>Note Owner: <span class="text-blue-400">@{report.note?.uploadedBy?.username}</span></span>
+                  </div>
+                </div>
+              ))}
+            </div>
+          )}
+        </div>
+      )}
+
+      {/* Tab: Sub Admin Deletion Requests */}
+      {activeTab === 'requests' && (
+        <div class="space-y-4 text-left">
+          <h3 class="font-display font-bold text-white text-lg font-sans">Sub-Admin Deletion Requests</h3>
+          {deleteRequests.length === 0 ? (
+            <div class="glass-panel border border-white/5 rounded-xl p-8 text-center text-slate-500 text-xs font-sans">
+              No deletion requests pending review.
+            </div>
+          ) : (
+            <div class="space-y-3">
+              {deleteRequests.map(req => (
+                <div key={req.id} class="glass-panel border border-white/5 p-4 rounded-xl flex flex-col md:flex-row md:items-center justify-between gap-4 font-sans">
+                  <div class="space-y-2">
+                    <div class="flex items-center gap-2">
+                      <span class="px-2 py-0.5 rounded text-[8px] font-bold uppercase tracking-wider bg-rose-500/10 text-rose-400 border border-rose-500/20">
+                        {req.requestType}
+                      </span>
+                      <h4 class="text-xs font-bold text-white leading-tight">{req.targetName}</h4>
+                    </div>
+                    <div class="flex flex-wrap items-center gap-x-4 gap-y-1 text-[9px] text-slate-500">
+                      <span>Requested By: <span class="text-slate-300 font-semibold">@{req.requestedBy?.username} ({req.requestedBy?.fullName})</span></span>
+                      <span>Requested At: <span class="text-slate-300 font-semibold">{req.createdAt ? new Date(req.createdAt).toLocaleString() : 'N/A'}</span></span>
+                    </div>
+                  </div>
+                  <div class="flex items-center gap-2 self-end md:self-auto shrink-0">
+                    <button
+                      onClick={() => handleRejectDeleteRequest(req.id)}
+                      class="px-3 py-1.5 bg-slate-800 hover:bg-slate-700 border border-white/5 text-slate-300 rounded-lg text-[10px] font-semibold cursor-pointer transition"
+                    >
+                      Reject Request
+                    </button>
+                    <button
+                      onClick={() => handleApproveDeleteRequest(req.id)}
+                      class="px-3 py-1.5 bg-rose-600 hover:bg-rose-500 text-white rounded-lg text-[10px] font-semibold cursor-pointer transition"
+                    >
+                      Approve Deletion
+                    </button>
                   </div>
                 </div>
               ))}

@@ -49,6 +49,15 @@ public class AdminController {
     private NotificationRepository notificationRepository;
 
     @Autowired
+    private BranchRepository branchRepository;
+
+    @Autowired
+    private SubjectRepository subjectRepository;
+
+    @Autowired
+    private DeleteRequestRepository deleteRequestRepository;
+
+    @Autowired
     private PasswordEncoder passwordEncoder;
 
     // Statistics
@@ -212,5 +221,87 @@ public class AdminController {
         }
         notificationRepository.deleteById(id);
         return ResponseEntity.ok(Map.of("message", "Platform announcement deleted successfully."));
+    }
+
+    // Sub Admin deletion requests mappings
+    @PostMapping("/api/admin/delete-requests")
+    public ResponseEntity<?> submitDeleteRequest(@RequestBody DeleteRequest request) {
+        Object principal = SecurityContextHolder.getContext().getAuthentication().getPrincipal();
+        if (!(principal instanceof User)) {
+            return ResponseEntity.status(401).body(Map.of("error", "Unauthorized"));
+        }
+        User user = (User) principal;
+        request.setRequestedBy(user);
+        request.setCreatedAt(LocalDateTime.now());
+        request.setStatus("PENDING");
+        return ResponseEntity.ok(deleteRequestRepository.save(request));
+    }
+
+    @GetMapping("/api/admin/delete-requests")
+    public ResponseEntity<?> getDeleteRequests() {
+        Object principal = SecurityContextHolder.getContext().getAuthentication().getPrincipal();
+        if (!(principal instanceof User)) {
+            return ResponseEntity.status(401).body(Map.of("error", "Unauthorized"));
+        }
+        User user = (User) principal;
+        if (user.getRole() != UserRole.ROLE_ADMIN) {
+            return ResponseEntity.status(403).body(Map.of("error", "Only administrator accounts can review delete requests."));
+        }
+        return ResponseEntity.ok(deleteRequestRepository.findByStatus("PENDING"));
+    }
+
+    @PutMapping("/api/admin/delete-requests/{id}/reject")
+    public ResponseEntity<?> rejectDeleteRequest(@PathVariable Long id) {
+        Object principal = SecurityContextHolder.getContext().getAuthentication().getPrincipal();
+        if (!(principal instanceof User)) {
+            return ResponseEntity.status(401).body(Map.of("error", "Unauthorized"));
+        }
+        User user = (User) principal;
+        if (user.getRole() != UserRole.ROLE_ADMIN) {
+            return ResponseEntity.status(403).body(Map.of("error", "Only administrator accounts can reject delete requests."));
+        }
+        return deleteRequestRepository.findById(id).map(req -> {
+            req.setStatus("REJECTED");
+            deleteRequestRepository.save(req);
+            return ResponseEntity.ok(Map.of("message", "Request rejected successfully."));
+        }).orElse(ResponseEntity.notFound().build());
+    }
+
+    @PutMapping("/api/admin/delete-requests/{id}/approve")
+    public ResponseEntity<?> approveDeleteRequest(@PathVariable Long id) {
+        Object principal = SecurityContextHolder.getContext().getAuthentication().getPrincipal();
+        if (!(principal instanceof User)) {
+            return ResponseEntity.status(401).body(Map.of("error", "Unauthorized"));
+        }
+        User user = (User) principal;
+        if (user.getRole() != UserRole.ROLE_ADMIN) {
+            return ResponseEntity.status(403).body(Map.of("error", "Only administrator accounts can approve delete requests."));
+        }
+
+        return deleteRequestRepository.findById(id).map(req -> {
+            Long targetId = req.getTargetId();
+            String type = req.getRequestType();
+
+            try {
+                if ("UNIVERSITY".equalsIgnoreCase(type)) {
+                    noteService.deleteNotesByUniversityAndCascade(targetId);
+                    universityRepository.deleteById(targetId);
+                } else if ("BRANCH".equalsIgnoreCase(type)) {
+                    noteService.deleteNotesByBranchAndCascade(targetId);
+                    branchRepository.deleteById(targetId);
+                } else if ("SUBJECT".equalsIgnoreCase(type)) {
+                    noteService.deleteNotesBySubjectAndCascade(targetId);
+                    subjectRepository.deleteById(targetId);
+                } else if ("NOTE".equalsIgnoreCase(type)) {
+                    noteService.deleteNoteAndCascade(targetId);
+                }
+
+                req.setStatus("APPROVED");
+                deleteRequestRepository.save(req);
+                return ResponseEntity.ok(Map.of("message", "Deletion request approved and executed successfully."));
+            } catch (Exception e) {
+                return ResponseEntity.internalServerError().body(Map.of("error", "Failed to execute cascading delete: " + e.getMessage()));
+            }
+        }).orElse(ResponseEntity.notFound().build());
     }
 }
