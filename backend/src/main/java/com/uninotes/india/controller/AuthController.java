@@ -73,4 +73,66 @@ public class AuthController {
         response.put("message", "Password has been updated successfully.");
         return ResponseEntity.ok(response);
     }
+
+    @PutMapping("/profile")
+    public ResponseEntity<?> updateProfile(@RequestBody UserDto profileDetails) {
+        Object principal = SecurityContextHolder.getContext().getAuthentication().getPrincipal();
+        if (!(principal instanceof com.uninotes.india.entity.User)) {
+            return ResponseEntity.status(401).body(Map.of("error", "Unauthorized"));
+        }
+        com.uninotes.india.entity.User user = (com.uninotes.india.entity.User) principal;
+
+        // Verify if username is changed and if it is taken
+        if (profileDetails.getUsername() != null && !profileDetails.getUsername().trim().isEmpty() && !user.getUsername().equals(profileDetails.getUsername())) {
+            // Students/Subadmins cannot change username!
+            if (user.getRole() != com.uninotes.india.entity.UserRole.ROLE_ADMIN) {
+                return ResponseEntity.status(403).body(Map.of("error", "Access denied: Students cannot change username."));
+            }
+            if (userRepository.findByUsername(profileDetails.getUsername()).isPresent()) {
+                return ResponseEntity.badRequest().body(Map.of("error", "Username is already taken."));
+            }
+            user.setUsername(profileDetails.getUsername());
+        }
+
+        // Verify if email is changed and if it is taken
+        if (profileDetails.getEmail() != null && !profileDetails.getEmail().trim().isEmpty() && !user.getEmail().equalsIgnoreCase(profileDetails.getEmail())) {
+            // Students/Subadmins cannot change email!
+            if (user.getRole() != com.uninotes.india.entity.UserRole.ROLE_ADMIN) {
+                return ResponseEntity.status(403).body(Map.of("error", "Access denied: Students cannot change email."));
+            }
+            if (userRepository.findByEmail(profileDetails.getEmail()).isPresent()) {
+                return ResponseEntity.badRequest().body(Map.of("error", "Email is already taken."));
+            }
+            user.setEmail(profileDetails.getEmail());
+        }
+
+        // Verify role change
+        if (profileDetails.getRole() != null) {
+            if (user.getRole() != profileDetails.getRole()) {
+                // Students/Subadmins cannot change role!
+                if (user.getRole() != com.uninotes.india.entity.UserRole.ROLE_ADMIN) {
+                    return ResponseEntity.status(403).body(Map.of("error", "Access denied: Students cannot change role."));
+                }
+                user.setRole(profileDetails.getRole());
+            }
+        }
+
+        // Editable fields by anyone (Student / Sub-admin / Admin)
+        if (profileDetails.getFullName() != null) {
+            user.setFullName(profileDetails.getFullName());
+        }
+        if (profileDetails.getMobileNumber() != null) {
+            user.setMobileNumber(profileDetails.getMobileNumber());
+        }
+        if (profileDetails.getCity() != null) {
+            user.setCity(profileDetails.getCity());
+        }
+        if (profileDetails.getCollegeName() != null) {
+            user.setCollegeName(profileDetails.getCollegeName());
+        }
+
+        user.setUpdatedAt(java.time.LocalDateTime.now());
+        com.uninotes.india.entity.User savedUser = userRepository.save(user);
+        return ResponseEntity.ok(authService.convertToDto(savedUser));
+    }
 }

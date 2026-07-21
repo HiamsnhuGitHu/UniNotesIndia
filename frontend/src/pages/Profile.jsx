@@ -4,7 +4,19 @@ import api from '../services/api';
 import { User, Mail, Smartphone, MapPin, GraduationCap, Calendar, Bookmark, Upload, CheckCircle2, Clock, Trash } from 'lucide-react';
 
 export default function Profile() {
-  const { user } = useAuth();
+  const { user, setUser } = useAuth();
+
+  // Profile Edit states
+  const [isEditing, setIsEditing] = useState(false);
+  const [formData, setFormData] = useState({
+    fullName: '',
+    username: '',
+    role: '',
+    email: '',
+    mobileNumber: '',
+    collegeName: '',
+    city: ''
+  });
 
   // Lists
   const [bookmarks, setBookmarks] = useState([]);
@@ -23,6 +35,39 @@ export default function Profile() {
   useEffect(() => {
     fetchProfileData();
   }, []);
+
+  const handleStartEdit = () => {
+    setFormData({
+      fullName: user?.fullName || '',
+      username: user?.username || '',
+      role: user?.role || '',
+      email: user?.email || '',
+      mobileNumber: user?.mobileNumber || '',
+      collegeName: user?.collegeName || '',
+      city: user?.city || ''
+    });
+    setIsEditing(true);
+  };
+
+  const handleSaveProfile = async (e) => {
+    e.preventDefault();
+    setLoading(true);
+    try {
+      const res = await api.put('/api/auth/profile', formData);
+      setUser(res.data);
+      localStorage.setItem('user', JSON.stringify(res.data));
+      setIsEditing(false);
+      showAlert('success', 'Profile updated successfully.');
+    } catch (err) {
+      if (err.response && err.response.data && err.response.data.error) {
+        showAlert('error', err.response.data.error);
+      } else {
+        showAlert('error', 'Failed to update profile.');
+      }
+    } finally {
+      setLoading(false);
+    }
+  };
 
   const fetchProfileData = async () => {
     try {
@@ -69,37 +114,192 @@ export default function Profile() {
       <div class="glass-panel border border-white/10 rounded-2xl p-6 sm:p-8 shadow-xl relative overflow-hidden">
         <div class="absolute -top-32 -left-32 w-72 h-72 bg-blue-500/10 rounded-full blur-3xl"></div>
 
-        <div class="flex flex-col sm:flex-row items-center gap-6 relative z-10">
-          <div class="h-20 w-20 rounded-2xl bg-blue-600/10 text-blue-400 border border-blue-500/20 flex items-center justify-center font-display font-extrabold text-3xl shrink-0">
-            {user?.fullName?.charAt(0).toUpperCase()}
+        <div class="flex flex-col sm:flex-row items-center justify-between gap-6 relative z-10">
+          <div class="flex flex-col sm:flex-row items-center gap-6">
+            <div class="h-20 w-20 rounded-2xl bg-blue-600/10 text-blue-400 border border-blue-500/20 flex items-center justify-center font-display font-extrabold text-3xl shrink-0">
+              {(isEditing ? formData.fullName : user?.fullName)?.charAt(0).toUpperCase()}
+            </div>
+
+            <div class="text-center sm:text-left space-y-1">
+              <h2 class="font-display font-extrabold text-white text-2xl">
+                {isEditing ? formData.fullName || 'User Profile' : user?.fullName}
+              </h2>
+              <p class="text-xs text-slate-400 font-mono">
+                @{isEditing ? formData.username : user?.username} ({isEditing ? formData.role?.replace('ROLE_', '') : user?.role?.replace('ROLE_', '')})
+              </p>
+            </div>
           </div>
 
-          <div class="text-center sm:text-left space-y-1">
-            <h2 class="font-display font-extrabold text-white text-2xl">{user?.fullName}</h2>
-            <p class="text-xs text-slate-400 font-mono">@{user?.username} ({user?.role?.replace('ROLE_', '')})</p>
-            <div class="flex flex-wrap items-center justify-center sm:justify-start gap-x-4 gap-y-1.5 text-xs text-slate-400 mt-2">
-              <span class="flex items-center gap-1"><GraduationCap size={14} className="text-slate-500" />{user?.collegeName}</span>
-              <span class="flex items-center gap-1"><MapPin size={14} className="text-slate-500" />{user?.city}</span>
-            </div>
+          {/* Upper Right Action Buttons */}
+          <div class="self-center sm:self-start shrink-0">
+            {!isEditing ? (
+              <button
+                type="button"
+                onClick={handleStartEdit}
+                class="px-4 py-2 bg-blue-600 hover:bg-blue-500 text-white rounded-xl text-xs font-semibold cursor-pointer transition shadow shadow-blue-500/20"
+              >
+                Edit Profile
+              </button>
+            ) : (
+              <div class="flex gap-2">
+                <button
+                  type="button"
+                  onClick={() => setIsEditing(false)}
+                  class="px-4 py-2 bg-slate-800 hover:bg-slate-700 text-slate-300 rounded-xl text-xs font-semibold cursor-pointer transition border border-white/5"
+                >
+                  Cancel
+                </button>
+                <button
+                  type="button"
+                  onClick={handleSaveProfile}
+                  disabled={loading}
+                  class="px-4 py-2 bg-emerald-600 hover:bg-emerald-500 text-white rounded-xl text-xs font-semibold cursor-pointer transition shadow shadow-emerald-500/20"
+                >
+                  {loading ? 'Saving...' : 'Save'}
+                </button>
+              </div>
+            )}
           </div>
         </div>
 
-        {/* Info Grid */}
-        <div class="grid grid-cols-1 sm:grid-cols-2 gap-4 border-t border-white/5 mt-6 pt-6 text-xs relative z-10">
-          <div class="flex items-center gap-3 bg-slate-900/40 p-3.5 rounded-xl border border-white/5">
+        {/* Info Grid of columns */}
+        <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 border-t border-white/5 mt-6 pt-6 text-xs relative z-10">
+          
+          {/* Box 1: Full Name */}
+          <div class="flex items-center gap-3 bg-slate-900/40 p-3.5 rounded-xl border border-white/5 text-left">
+            <User className="h-4 w-4 text-slate-400" />
+            <div class="flex-1">
+              <p class="text-[10px] text-slate-500 font-semibold uppercase">Full Name</p>
+              {!isEditing ? (
+                <p class="text-slate-200 mt-0.5 font-semibold">{user?.fullName}</p>
+              ) : (
+                <input
+                  type="text"
+                  required
+                  value={formData.fullName}
+                  onChange={e => setFormData({ ...formData, fullName: e.target.value })}
+                  class="w-full text-xs text-slate-200 bg-transparent border-b border-slate-700 focus:border-blue-500 outline-none mt-1 py-0.5"
+                />
+              )}
+            </div>
+          </div>
+
+          {/* Box 2: Username */}
+          <div class="flex items-center gap-3 bg-slate-900/40 p-3.5 rounded-xl border border-white/5 text-left">
+            <User className="h-4 w-4 text-slate-400" />
+            <div class="flex-1">
+              <p class="text-[10px] text-slate-500 font-semibold uppercase">Username</p>
+              {!isEditing ? (
+                <p class="text-slate-200 mt-0.5">@{user?.username}</p>
+              ) : (
+                <input
+                  type="text"
+                  required
+                  disabled={user?.role !== 'ROLE_ADMIN'}
+                  value={formData.username}
+                  onChange={e => setFormData({ ...formData, username: e.target.value })}
+                  class="w-full text-xs text-slate-200 bg-transparent border-b border-slate-700 focus:border-blue-500 outline-none mt-1 py-0.5 disabled:opacity-50 disabled:cursor-not-allowed"
+                />
+              )}
+            </div>
+          </div>
+
+          {/* Box 3: Role */}
+          <div class="flex items-center gap-3 bg-slate-900/40 p-3.5 rounded-xl border border-white/5 text-left">
+            <GraduationCap className="h-4 w-4 text-slate-400" />
+            <div class="flex-1">
+              <p class="text-[10px] text-slate-500 font-semibold uppercase">Role</p>
+              {!isEditing ? (
+                <p class="text-slate-200 mt-0.5">{user?.role?.replace('ROLE_', '')}</p>
+              ) : (
+                <select
+                  disabled={user?.role !== 'ROLE_ADMIN'}
+                  value={formData.role}
+                  onChange={e => setFormData({ ...formData, role: e.target.value })}
+                  class="w-full text-xs text-slate-200 bg-slate-900 border-b border-slate-700 focus:border-blue-500 outline-none mt-1 py-0.5 disabled:opacity-50 disabled:cursor-not-allowed"
+                >
+                  <option value="ROLE_STUDENT">STUDENT</option>
+                  <option value="ROLE_SUBADMIN">SUBADMIN</option>
+                  <option value="ROLE_ADMIN">ADMIN</option>
+                </select>
+              )}
+            </div>
+          </div>
+
+          {/* Box 4: Email Address */}
+          <div class="flex items-center gap-3 bg-slate-900/40 p-3.5 rounded-xl border border-white/5 text-left">
             <Mail className="h-4 w-4 text-slate-400" />
-            <div>
+            <div class="flex-1">
               <p class="text-[10px] text-slate-500 font-semibold uppercase">Email Address</p>
-              <p class="text-slate-200 mt-0.5">{user?.email}</p>
+              {!isEditing ? (
+                <p class="text-slate-200 mt-0.5">{user?.email}</p>
+              ) : (
+                <input
+                  type="email"
+                  required
+                  disabled={user?.role !== 'ROLE_ADMIN'}
+                  value={formData.email}
+                  onChange={e => setFormData({ ...formData, email: e.target.value })}
+                  class="w-full text-xs text-slate-200 bg-transparent border-b border-slate-700 focus:border-blue-500 outline-none mt-1 py-0.5 disabled:opacity-50 disabled:cursor-not-allowed"
+                />
+              )}
             </div>
           </div>
-          <div class="flex items-center gap-3 bg-slate-900/40 p-3.5 rounded-xl border border-white/5">
+
+          {/* Box 5: Mobile Number */}
+          <div class="flex items-center gap-3 bg-slate-900/40 p-3.5 rounded-xl border border-white/5 text-left">
             <Smartphone className="h-4 w-4 text-slate-400" />
-            <div>
+            <div class="flex-1">
               <p class="text-[10px] text-slate-500 font-semibold uppercase">Mobile Number</p>
-              <p class="text-slate-200 mt-0.5">{user?.mobileNumber}</p>
+              {!isEditing ? (
+                <p class="text-slate-200 mt-0.5">{user?.mobileNumber || 'N/A'}</p>
+              ) : (
+                <input
+                  type="text"
+                  value={formData.mobileNumber}
+                  onChange={e => setFormData({ ...formData, mobileNumber: e.target.value })}
+                  class="w-full text-xs text-slate-200 bg-transparent border-b border-slate-700 focus:border-blue-500 outline-none mt-1 py-0.5"
+                />
+              )}
             </div>
           </div>
+
+          {/* Box 6: College Name */}
+          <div class="flex items-center gap-3 bg-slate-900/40 p-3.5 rounded-xl border border-white/5 text-left">
+            <GraduationCap className="h-4 w-4 text-slate-400" />
+            <div class="flex-1">
+              <p class="text-[10px] text-slate-500 font-semibold uppercase">College Name</p>
+              {!isEditing ? (
+                <p class="text-slate-200 mt-0.5">{user?.collegeName || 'N/A'}</p>
+              ) : (
+                <input
+                  type="text"
+                  value={formData.collegeName}
+                  onChange={e => setFormData({ ...formData, collegeName: e.target.value })}
+                  class="w-full text-xs text-slate-200 bg-transparent border-b border-slate-700 focus:border-blue-500 outline-none mt-1 py-0.5"
+                />
+              )}
+            </div>
+          </div>
+
+          {/* Box 7: City / Address */}
+          <div class="flex items-center gap-3 bg-slate-900/40 p-3.5 rounded-xl border border-white/5 text-left sm:col-span-2 lg:col-span-3">
+            <MapPin className="h-4 w-4 text-slate-400" />
+            <div class="flex-1">
+              <p class="text-[10px] text-slate-500 font-semibold uppercase">City / Address</p>
+              {!isEditing ? (
+                <p class="text-slate-200 mt-0.5">{user?.city || 'N/A'}</p>
+              ) : (
+                <input
+                  type="text"
+                  value={formData.city}
+                  onChange={e => setFormData({ ...formData, city: e.target.value })}
+                  class="w-full text-xs text-slate-200 bg-transparent border-b border-slate-700 focus:border-blue-500 outline-none mt-1 py-0.5"
+                />
+              )}
+            </div>
+          </div>
+
         </div>
       </div>
 
