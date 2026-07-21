@@ -118,7 +118,7 @@ public class NoteController {
     }
 
     @GetMapping("/api/notes/download/{id}")
-    public ResponseEntity<Resource> downloadNote(@PathVariable Long id) {
+    public ResponseEntity<?> downloadNote(@PathVariable Long id) {
         Object principal = SecurityContextHolder.getContext().getAuthentication().getPrincipal();
         User user = (principal instanceof User) ? (User) principal : null;
 
@@ -139,6 +139,10 @@ public class NoteController {
             throw new RuntimeException("File path invalid", ex);
         }
 
+        if (!resource.exists() || !resource.isReadable()) {
+            return ResponseEntity.status(404).body(Map.of("error", "The requested note file was not found on the server's storage. It may have been deleted or the server restarted."));
+        }
+
         return ResponseEntity.ok()
                 .contentType(MediaType.parseMediaType("application/octet-stream"))
                 .header(HttpHeaders.CONTENT_DISPOSITION, "attachment; filename=\"" + note.getFileName() + "\"")
@@ -146,7 +150,7 @@ public class NoteController {
     }
 
     @GetMapping("/api/notes/preview/{id}")
-    public ResponseEntity<Resource> previewNote(@PathVariable Long id) {
+    public ResponseEntity<?> previewNote(@PathVariable Long id) {
         Note note = noteService.getNoteOrThrow(id);
         Path filePath = fileStorageService.getFileLocation(note.getFilePath());
         Resource resource;
@@ -154,6 +158,10 @@ public class NoteController {
             resource = new UrlResource(filePath.toUri());
         } catch (MalformedURLException ex) {
             throw new RuntimeException("File path invalid", ex);
+        }
+
+        if (!resource.exists() || !resource.isReadable()) {
+            return ResponseEntity.status(404).body(Map.of("error", "The requested note file was not found on the server's storage. It may have been deleted or the server restarted."));
         }
 
         String contentType = note.getFileType();

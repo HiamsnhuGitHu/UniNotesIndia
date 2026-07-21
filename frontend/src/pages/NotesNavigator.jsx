@@ -62,6 +62,8 @@ export default function NotesNavigator() {
   const [reportReason, setReportReason] = useState('');
   const [showReportForm, setShowReportForm] = useState(false);
   const [showPreviewModal, setShowPreviewModal] = useState(false);
+  const [previewError, setPreviewError] = useState(null);
+  const [checkingPreview, setCheckingPreview] = useState(false);
 
   // Status message alerts
   const [alertMsg, setAlertMsg] = useState({ type: '', text: '' });
@@ -102,6 +104,29 @@ export default function NotesNavigator() {
     };
     init();
   }, [location]);
+
+  // Verify preview is available on mount/open
+  useEffect(() => {
+    if (showPreviewModal && activeNote) {
+      const checkPreview = async () => {
+        setCheckingPreview(true);
+        setPreviewError(null);
+        try {
+          await api.head(`/api/notes/preview/${activeNote.id}`);
+        } catch (err) {
+          console.error("Preview check failed:", err);
+          let errorMsg = "The requested note file was not found on the server's storage. It may have been deleted or the server restarted.";
+          if (err.response && err.response.data && err.response.data.error) {
+            errorMsg = err.response.data.error;
+          }
+          setPreviewError(errorMsg);
+        } finally {
+          setCheckingPreview(false);
+        }
+      };
+      checkPreview();
+    }
+  }, [showPreviewModal, activeNote]);
 
   // Perform search query directly
   const performSearch = async (queryStr, uniId) => {
@@ -806,18 +831,37 @@ export default function NotesNavigator() {
 
             {/* Modal Body: Embedded Preview */}
             <div class="flex-1 bg-slate-900 relative">
-              {activeNote.fileType && activeNote.fileType.startsWith('image/') ? (
-                <img
-                  src={`${import.meta.env.VITE_API_URL || ''}/api/notes/preview/${activeNote.id}`}
-                  alt={activeNote.title}
-                  class="w-full h-full object-contain"
-                />
+              {checkingPreview ? (
+                <div class="absolute inset-0 flex flex-col items-center justify-center gap-3 text-slate-400">
+                  <div class="w-8 h-8 border-4 border-blue-500 border-t-transparent rounded-full animate-spin"></div>
+                  <span class="text-xs font-semibold">Verifying document preview availability...</span>
+                </div>
+              ) : previewError ? (
+                <div class="absolute inset-0 flex flex-col items-center justify-center p-6 text-center space-y-4">
+                  <div class="p-3 bg-rose-500/10 border border-rose-500/20 text-rose-400 rounded-2xl">
+                    <AlertCircle size={32} />
+                  </div>
+                  <div class="max-w-md space-y-1.5">
+                    <h4 class="font-display font-bold text-white text-base">Preview Unsuccessful</h4>
+                    <p class="text-xs text-slate-400 leading-relaxed">
+                      {previewError}
+                    </p>
+                  </div>
+                </div>
               ) : (
-                <iframe
-                  src={`${import.meta.env.VITE_API_URL || ''}/api/notes/preview/${activeNote.id}`}
-                  title={activeNote.title}
-                  class="w-full h-full border-0"
-                />
+                activeNote.fileType && activeNote.fileType.startsWith('image/') ? (
+                  <img
+                    src={`${import.meta.env.VITE_API_URL || ''}/api/notes/preview/${activeNote.id}`}
+                    alt={activeNote.title}
+                    class="w-full h-full object-contain"
+                  />
+                ) : (
+                  <iframe
+                    src={`${import.meta.env.VITE_API_URL || ''}/api/notes/preview/${activeNote.id}`}
+                    title={activeNote.title}
+                    class="w-full h-full border-0"
+                  />
+                )
               )}
             </div>
 
