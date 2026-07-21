@@ -31,6 +31,7 @@ export default function AdminDashboard() {
   const [approvedNotes, setApprovedNotes] = useState([]);
   const [deleteRequests, setDeleteRequests] = useState([]);
   const [usersList, setUsersList] = useState([]);
+  const [userSearchQuery, setUserSearchQuery] = useState('');
   const [reports, setReports] = useState([]);
 
   // Directories management
@@ -902,16 +903,38 @@ export default function AdminDashboard() {
       {/* Tab: User Directory */}
       {activeTab === 'users' && (
         <div class="space-y-4">
-          <div class="flex items-center gap-4">
-            <h3 class="font-display font-bold text-white text-lg">User Management</h3>
-            <button
-              onClick={startAddingUser}
-              class="flex items-center gap-1.5 px-3.5 py-1.5 bg-blue-600 hover:bg-blue-500 text-white rounded-xl text-xs font-semibold cursor-pointer transition shadow shadow-blue-500/20"
-            >
-              <Plus size={14} />
-              <span>Add New User</span>
-            </button>
+          <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+            <div class="flex items-center gap-4">
+              <h3 class="font-display font-bold text-white text-lg">User Management</h3>
+              <button
+                onClick={startAddingUser}
+                class="flex items-center gap-1.5 px-3.5 py-1.5 bg-blue-600 hover:bg-blue-500 text-white rounded-xl text-xs font-semibold cursor-pointer transition shadow shadow-blue-500/20"
+              >
+                <Plus size={14} />
+                <span>Add New User</span>
+              </button>
+            </div>
+
+            {/* User Search Input Bar */}
+            <div class="relative w-full sm:w-80">
+              <input
+                type="text"
+                value={userSearchQuery}
+                onChange={e => setUserSearchQuery(e.target.value)}
+                placeholder="Search name, username, email, mobile..."
+                class="w-full text-xs bg-slate-900/60 rounded-xl border border-slate-700/60 pl-3 pr-10 py-2 text-white outline-none focus:border-blue-500 placeholder-slate-500"
+              />
+              {userSearchQuery && (
+                <button
+                  onClick={() => setUserSearchQuery('')}
+                  class="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-white text-xs cursor-pointer font-sans"
+                >
+                  ✕
+                </button>
+              )}
+            </div>
           </div>
+
           <div class="overflow-x-auto rounded-xl border border-white/5">
             <table class="w-full text-xs text-left text-slate-300">
               <thead class="bg-slate-900 text-slate-400 uppercase text-[9px] tracking-widest border-b border-white/5">
@@ -925,7 +948,15 @@ export default function AdminDashboard() {
                 </tr>
               </thead>
               <tbody class="divide-y divide-white/5 bg-slate-950/40">
-                {usersList.map(u => (
+                {usersList.filter(u => {
+                  const query = userSearchQuery.toLowerCase();
+                  return (
+                    (u.fullName || '').toLowerCase().includes(query) ||
+                    (u.username || '').toLowerCase().includes(query) ||
+                    (u.email || '').toLowerCase().includes(query) ||
+                    (u.mobileNumber || '').toLowerCase().includes(query)
+                  );
+                }).map(u => (
                   <tr key={u.id}>
                     <td class="p-3 font-semibold text-white">{u.fullName} <span class="text-[10px] text-slate-500 font-mono">@{u.username}</span></td>
                     <td class="p-3">{u.email}</td>

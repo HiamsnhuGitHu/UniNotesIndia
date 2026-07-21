@@ -35,6 +35,10 @@ public class AuthService {
         if (userRepository.findByEmail(request.getEmail()).isPresent()) {
             throw new RuntimeException("Email is already registered");
         }
+        if (request.getMobileNumber() != null && !request.getMobileNumber().trim().isEmpty() &&
+            userRepository.findByMobileNumber(request.getMobileNumber().trim()).isPresent()) {
+            throw new RuntimeException("Mobile number is already registered");
+        }
 
         User user = new User();
         user.setFullName(request.getFullName());
