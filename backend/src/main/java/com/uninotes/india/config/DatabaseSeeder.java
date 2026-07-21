@@ -29,64 +29,29 @@ public class DatabaseSeeder implements CommandLineRunner {
     @Autowired
     private PasswordEncoder passwordEncoder;
 
+    @Autowired
+    private com.uninotes.india.service.NoteService noteService;
+
     @Override
     public void run(String... args) throws Exception {
-        seedUsers();
+        cleanupTestUsers();
         seedUniversities();
         seedBranches();
         seedSubjects();
     }
 
-    private void seedUsers() {
-        // Seed Admin
-        if (userRepository.findByUsernameIgnoreCase("admin").isEmpty()) {
-            User admin = new User();
-            admin.setFullName("Platform Admin");
-            admin.setMobileNumber("9876543210");
-            admin.setEmail("admin@uninotes.in");
-            admin.setCity("Jaipur");
-            admin.setCollegeName("UniNotes Headquarters");
-            admin.setUsername("admin");
-            admin.setPassword(passwordEncoder.encode("admin123"));
-            admin.setRole(UserRole.ROLE_ADMIN);
-            admin.setEnabled(true);
-            admin.setCreatedAt(LocalDateTime.now());
-            userRepository.save(admin);
-            System.out.println("Admin user seeded (admin/admin123)");
-        }
-
-        // Seed SubAdmin
-        if (userRepository.findByUsernameIgnoreCase("subadmin").isEmpty()) {
-            User subAdmin = new User();
-            subAdmin.setFullName("Sub Administrator");
-            subAdmin.setMobileNumber("9876543212");
-            subAdmin.setEmail("subadmin@uninotes.in");
-            subAdmin.setCity("Jaipur");
-            subAdmin.setCollegeName("UniNotes Regional Office");
-            subAdmin.setUsername("subadmin");
-            subAdmin.setPassword(passwordEncoder.encode("subadmin123"));
-            subAdmin.setRole(UserRole.ROLE_SUBADMIN);
-            subAdmin.setEnabled(true);
-            subAdmin.setCreatedAt(LocalDateTime.now());
-            userRepository.save(subAdmin);
-            System.out.println("SubAdmin user seeded (subadmin/subadmin123)");
-        }
-
-        // Seed Student
-        if (userRepository.findByUsernameIgnoreCase("student").isEmpty()) {
-            User student = new User();
-            student.setFullName("Regular Student");
-            student.setMobileNumber("9876543211");
-            student.setEmail("student@uninotes.in");
-            student.setCity("Jaipur");
-            student.setCollegeName("JECRC Jaipur");
-            student.setUsername("student");
-            student.setPassword(passwordEncoder.encode("password123"));
-            student.setRole(UserRole.ROLE_STUDENT);
-            student.setEnabled(true);
-            student.setCreatedAt(LocalDateTime.now());
-            userRepository.save(student);
-            System.out.println("Student user seeded (student/password123)");
+    private void cleanupTestUsers() {
+        String[] testUsernames = {"admin", "subadmin", "student"};
+        for (String username : testUsernames) {
+            userRepository.findByUsernameIgnoreCase(username).ifPresent(user -> {
+                try {
+                    noteService.deleteNotesByUserAndCascade(user.getId());
+                } catch (Exception e) {
+                    System.err.println("Failed to cascade delete test user notes: " + e.getMessage());
+                }
+                userRepository.delete(user);
+                System.out.println("Permanently deleted test user account: " + username);
+            });
         }
     }
 
