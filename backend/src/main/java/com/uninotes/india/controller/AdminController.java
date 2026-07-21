@@ -86,7 +86,7 @@ public class AdminController {
     public ResponseEntity<?> createOrUpdateUser(@RequestBody User userDetails) {
         if (userDetails.getId() == null) {
             // New user via admin
-            if (userRepository.findByUsername(userDetails.getUsername()).isPresent()) {
+            if (userRepository.findByUsernameIgnoreCase(userDetails.getUsername()).isPresent()) {
                 throw new RuntimeException("Username already exists");
             }
             if (userRepository.findByEmail(userDetails.getEmail()).isPresent()) {
@@ -110,8 +110,8 @@ public class AdminController {
                 oldUserCopy.setCollegeName(user.getCollegeName());
                 oldUserCopy.setCity(user.getCity());
 
-                if (!user.getUsername().equals(userDetails.getUsername())) {
-                    if (userRepository.findByUsername(userDetails.getUsername()).isPresent()) {
+                if (!user.getUsername().equalsIgnoreCase(userDetails.getUsername())) {
+                    if (userRepository.findByUsernameIgnoreCase(userDetails.getUsername()).isPresent()) {
                         throw new RuntimeException("Username already taken");
                     }
                     user.setUsername(userDetails.getUsername());

@@ -29,7 +29,7 @@ public class AuthService {
     private JwtTokenProvider tokenProvider;
 
     public UserDto register(RegisterRequest request) {
-        if (userRepository.findByUsername(request.getUsername()).isPresent()) {
+        if (userRepository.findByUsernameIgnoreCase(request.getUsername()).isPresent()) {
             throw new RuntimeException("Username is already taken");
         }
         if (userRepository.findByEmail(request.getEmail()).isPresent()) {
@@ -68,7 +68,7 @@ public class AuthService {
     }
 
     public AuthResponse login(LoginRequest request) {
-        User user = userRepository.findByUsername(request.getUsername())
+        User user = userRepository.findByUsernameIgnoreCase(request.getUsername())
                 .orElseThrow(() -> new RuntimeException("Invalid username or password"));
 
         if (!passwordEncoder.matches(request.getPassword(), user.getPassword())) {

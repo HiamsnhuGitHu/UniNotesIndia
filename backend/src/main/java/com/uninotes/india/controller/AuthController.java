@@ -98,12 +98,12 @@ public class AuthController {
         oldUserCopy.setCity(user.getCity());
 
         // Verify if username is changed and if it is taken
-        if (profileDetails.getUsername() != null && !profileDetails.getUsername().trim().isEmpty() && !user.getUsername().equals(profileDetails.getUsername())) {
+        if (profileDetails.getUsername() != null && !profileDetails.getUsername().trim().isEmpty() && !user.getUsername().equalsIgnoreCase(profileDetails.getUsername())) {
             // Students/Subadmins cannot change username!
             if (user.getRole() != com.uninotes.india.entity.UserRole.ROLE_ADMIN) {
                 return ResponseEntity.status(403).body(Map.of("error", "Access denied: Students cannot change username."));
             }
-            if (userRepository.findByUsername(profileDetails.getUsername()).isPresent()) {
+            if (userRepository.findByUsernameIgnoreCase(profileDetails.getUsername()).isPresent()) {
                 return ResponseEntity.badRequest().body(Map.of("error", "Username is already taken."));
             }
             user.setUsername(profileDetails.getUsername());
