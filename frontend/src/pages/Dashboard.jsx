@@ -77,7 +77,7 @@ export default function Dashboard() {
             <span class="bg-gradient-to-r from-blue-400 via-indigo-400 to-purple-400 bg-clip-text text-transparent">UniNotes India</span>
           </h1>
           <p class="text-sm sm:text-base text-slate-300 max-w-xl mx-auto leading-relaxed">
-            Free community-driven platform to share and access study notes, previous question papers, and syllabi of top Jaipur engineering universities.
+            Free community-driven platform to share and access study notes, previous question papers, and syllabi from engineering universities across India.
           </p>
 
           {/* Glass Search Bar */}
