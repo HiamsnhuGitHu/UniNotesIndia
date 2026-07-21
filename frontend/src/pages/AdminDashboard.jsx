@@ -676,7 +676,6 @@ export default function AdminDashboard() {
         </div>
       )}
 
-      // Tab: Directory Management (Universities, Branches, Subjects CRUD, and Uploaded Materials)
       {activeTab === 'directories' && (
         <div class="space-y-6">
           
