@@ -18,9 +18,9 @@ export default function AdminDashboard() {
   const { user } = useAuth();
   const isSubAdmin = user?.role === 'ROLE_SUBADMIN';
 
-  // If a sub admin somehow tries to go to 'users' tab, reset them to 'stats'
+  // If a sub admin somehow tries to go to 'users' or 'requests' tab, reset them to 'stats'
   useEffect(() => {
-    if (isSubAdmin && activeTab === 'users') {
+    if (isSubAdmin && (activeTab === 'users' || activeTab === 'requests')) {
       handleTabChange('stats');
     }
   }, [activeTab, isSubAdmin]);
@@ -704,12 +704,8 @@ export default function AdminDashboard() {
               </div>
             </div>
             <div 
-              onClick={() => !isSubAdmin && handleTabChange('directories')}
-              class={`glass-panel border border-white/5 rounded-2xl p-6 flex items-center gap-4 ${
-                isSubAdmin 
-                  ? 'cursor-default opacity-70' 
-                  : 'cursor-pointer hover:border-purple-500/40 hover:bg-slate-900/20 hover:scale-[1.02] active:scale-[0.98]'
-              } transition-all duration-300`}
+              onClick={() => handleTabChange('directories')}
+              class="glass-panel border border-white/5 rounded-2xl p-6 flex items-center gap-4 cursor-pointer hover:border-purple-500/40 hover:bg-slate-900/20 hover:scale-[1.02] active:scale-[0.98] transition-all duration-300"
             >
               <div class="p-3 bg-purple-600/10 text-purple-400 rounded-xl border border-purple-500/20"><School size={20} /></div>
               <div>
@@ -718,12 +714,8 @@ export default function AdminDashboard() {
               </div>
             </div>
             <div 
-              onClick={() => !isSubAdmin && handleTabChange('approvals')}
-              class={`glass-panel border border-white/5 rounded-2xl p-6 flex items-center gap-4 ${
-                isSubAdmin 
-                  ? 'cursor-default opacity-70' 
-                  : 'cursor-pointer hover:border-indigo-500/40 hover:bg-slate-900/20 hover:scale-[1.02] active:scale-[0.98]'
-              } transition-all duration-300`}
+              onClick={() => handleTabChange('approvals')}
+              class="glass-panel border border-white/5 rounded-2xl p-6 flex items-center gap-4 cursor-pointer hover:border-indigo-500/40 hover:bg-slate-900/20 hover:scale-[1.02] active:scale-[0.98] transition-all duration-300"
             >
               <div class="p-3 bg-indigo-600/10 text-indigo-400 rounded-xl border border-indigo-500/20"><FileCheck size={20} /></div>
               <div>
@@ -732,12 +724,8 @@ export default function AdminDashboard() {
               </div>
             </div>
             <div 
-              onClick={() => !isSubAdmin && handleTabChange('reports')}
-              class={`glass-panel border border-white/5 rounded-2xl p-6 flex items-center gap-4 ${
-                isSubAdmin 
-                  ? 'cursor-default opacity-70' 
-                  : 'cursor-pointer hover:border-amber-500/40 hover:bg-slate-900/20 hover:scale-[1.02] active:scale-[0.98]'
-              } transition-all duration-300`}
+              onClick={() => handleTabChange('reports')}
+              class="glass-panel border border-white/5 rounded-2xl p-6 flex items-center gap-4 cursor-pointer hover:border-amber-500/40 hover:bg-slate-900/20 hover:scale-[1.02] active:scale-[0.98] transition-all duration-300"
             >
               <div class="p-3 bg-amber-600/10 text-amber-400 rounded-xl border border-amber-500/20"><Download size={20} /></div>
               <div>

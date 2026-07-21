@@ -38,8 +38,8 @@ public class DatabaseSeeder implements CommandLineRunner {
     }
 
     private void seedUsers() {
-        if (userRepository.count() == 0) {
-            // Seed Admin
+        // Seed Admin
+        if (userRepository.findByUsernameIgnoreCase("admin").isEmpty()) {
             User admin = new User();
             admin.setFullName("Platform Admin");
             admin.setMobileNumber("9876543210");
@@ -52,8 +52,28 @@ public class DatabaseSeeder implements CommandLineRunner {
             admin.setEnabled(true);
             admin.setCreatedAt(LocalDateTime.now());
             userRepository.save(admin);
+            System.out.println("Admin user seeded (admin/admin123)");
+        }
 
-            // Seed Student
+        // Seed SubAdmin
+        if (userRepository.findByUsernameIgnoreCase("subadmin").isEmpty()) {
+            User subAdmin = new User();
+            subAdmin.setFullName("Sub Administrator");
+            subAdmin.setMobileNumber("9876543212");
+            subAdmin.setEmail("subadmin@uninotes.in");
+            subAdmin.setCity("Jaipur");
+            subAdmin.setCollegeName("UniNotes Regional Office");
+            subAdmin.setUsername("subadmin");
+            subAdmin.setPassword(passwordEncoder.encode("subadmin123"));
+            subAdmin.setRole(UserRole.ROLE_SUBADMIN);
+            subAdmin.setEnabled(true);
+            subAdmin.setCreatedAt(LocalDateTime.now());
+            userRepository.save(subAdmin);
+            System.out.println("SubAdmin user seeded (subadmin/subadmin123)");
+        }
+
+        // Seed Student
+        if (userRepository.findByUsernameIgnoreCase("student").isEmpty()) {
             User student = new User();
             student.setFullName("Regular Student");
             student.setMobileNumber("9876543211");
@@ -66,8 +86,7 @@ public class DatabaseSeeder implements CommandLineRunner {
             student.setEnabled(true);
             student.setCreatedAt(LocalDateTime.now());
             userRepository.save(student);
-
-            System.out.println("Default users seeded (admin/admin123, student/password123)");
+            System.out.println("Student user seeded (student/password123)");
         }
     }
 

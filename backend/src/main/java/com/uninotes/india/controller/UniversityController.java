@@ -55,6 +55,10 @@ public class UniversityController {
     @DeleteMapping("/api/admin/universities/{id}")
     @CacheEvict(value = "universities", allEntries = true)
     public ResponseEntity<?> delete(@PathVariable Long id) {
+        com.uninotes.india.entity.User currentUser = (com.uninotes.india.entity.User) org.springframework.security.core.context.SecurityContextHolder.getContext().getAuthentication().getPrincipal();
+        if (currentUser.getRole() != com.uninotes.india.entity.UserRole.ROLE_ADMIN) {
+            return ResponseEntity.status(403).body(Map.of("error", "Access denied: Only administrators can delete universities directly."));
+        }
         noteService.deleteNotesByUniversityAndCascade(id);
         universityRepository.deleteById(id);
         Map<String, String> response = new HashMap<>();

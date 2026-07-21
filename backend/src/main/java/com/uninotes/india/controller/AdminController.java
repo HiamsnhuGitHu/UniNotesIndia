@@ -78,12 +78,21 @@ public class AdminController {
 
     // User management CRUD
     @GetMapping("/api/admin/users")
-    public List<User> getAllUsers() {
-        return userRepository.findAll();
+    public ResponseEntity<?> getAllUsers() {
+        User currentUser = (User) SecurityContextHolder.getContext().getAuthentication().getPrincipal();
+        if (currentUser.getRole() != UserRole.ROLE_ADMIN) {
+            return ResponseEntity.status(403).body(Map.of("error", "Access denied: Only administrators can list users."));
+        }
+        return ResponseEntity.ok(userRepository.findAll());
     }
 
     @PostMapping("/api/admin/users")
     public ResponseEntity<?> createOrUpdateUser(@RequestBody User userDetails) {
+        User currentUser = (User) SecurityContextHolder.getContext().getAuthentication().getPrincipal();
+        if (currentUser.getRole() != UserRole.ROLE_ADMIN) {
+            return ResponseEntity.status(403).body(Map.of("error", "Access denied: Only administrators can create or update users."));
+        }
+
         if (userDetails.getId() == null) {
             // New user via admin
             if (userRepository.findByUsernameIgnoreCase(userDetails.getUsername()).isPresent()) {
@@ -156,11 +165,20 @@ public class AdminController {
 
     @GetMapping("/api/admin/users/{id}/history")
     public ResponseEntity<?> getUserHistory(@PathVariable Long id) {
+        User currentUser = (User) SecurityContextHolder.getContext().getAuthentication().getPrincipal();
+        if (currentUser.getRole() != UserRole.ROLE_ADMIN) {
+            return ResponseEntity.status(403).body(Map.of("error", "Access denied: Only administrators can view user history."));
+        }
         return ResponseEntity.ok(userHistoryService.getHistory(id));
     }
 
     @PutMapping("/api/admin/users/{id}/toggle-status")
     public ResponseEntity<?> toggleUserStatus(@PathVariable Long id) {
+        User currentUser = (User) SecurityContextHolder.getContext().getAuthentication().getPrincipal();
+        if (currentUser.getRole() != UserRole.ROLE_ADMIN) {
+            return ResponseEntity.status(403).body(Map.of("error", "Access denied: Only administrators can toggle account status."));
+        }
+
         User user = userRepository.findById(id)
                 .orElseThrow(() -> new RuntimeException("User not found"));
         user.setEnabled(!user.isEnabled());
@@ -176,6 +194,11 @@ public class AdminController {
 
     @DeleteMapping("/api/admin/users/{id}")
     public ResponseEntity<?> deleteUser(@PathVariable Long id) {
+        User currentUser = (User) SecurityContextHolder.getContext().getAuthentication().getPrincipal();
+        if (currentUser.getRole() != UserRole.ROLE_ADMIN) {
+            return ResponseEntity.status(403).body(Map.of("error", "Access denied: Only administrators can delete users."));
+        }
+
         // Deleting user removes their physical files and uploaded notes
         noteService.deleteNotesByUserAndCascade(id);
 
@@ -213,6 +236,11 @@ public class AdminController {
 
     @DeleteMapping("/api/admin/notes/{id}")
     public ResponseEntity<?> deleteNoteAdmin(@PathVariable Long id) {
+        User currentUser = (User) SecurityContextHolder.getContext().getAuthentication().getPrincipal();
+        if (currentUser.getRole() != UserRole.ROLE_ADMIN) {
+            return ResponseEntity.status(403).body(Map.of("error", "Access denied: Only administrators can delete notes directly."));
+        }
+
         noteService.deleteNoteAndCascade(id);
         return ResponseEntity.ok(Map.of("message", "Note deleted successfully."));
     }

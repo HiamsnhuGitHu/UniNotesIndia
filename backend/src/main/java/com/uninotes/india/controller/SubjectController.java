@@ -66,6 +66,10 @@ public class SubjectController {
 
     @DeleteMapping("/api/admin/subjects/{id}")
     public ResponseEntity<?> deleteAdmin(@PathVariable Long id) {
+        com.uninotes.india.entity.User currentUser = (com.uninotes.india.entity.User) org.springframework.security.core.context.SecurityContextHolder.getContext().getAuthentication().getPrincipal();
+        if (currentUser.getRole() != com.uninotes.india.entity.UserRole.ROLE_ADMIN) {
+            return ResponseEntity.status(403).body(Map.of("error", "Access denied: Only administrators can delete subjects directly."));
+        }
         noteService.deleteNotesBySubjectAndCascade(id);
         subjectRepository.deleteById(id);
         Map<String, String> response = new HashMap<>();

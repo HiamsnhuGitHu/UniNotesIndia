@@ -158,7 +158,8 @@ export default function UploadForm() {
       setUploadSuccess(true);
       showAlert('success', 'Upload complete!');
     } catch (err) {
-      showAlert('error', 'Failed to upload document. Please verify parameters.');
+      const errorMsg = err.response?.data?.error || err.response?.data?.message || 'Failed to upload document. Please verify parameters.';
+      showAlert('error', errorMsg);
     } finally {
       setLoading(false);
     }
