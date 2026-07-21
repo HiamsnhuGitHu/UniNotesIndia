@@ -10,6 +10,7 @@ spring:
     mongodb:
       uri: ${SPRING_DATA_MONGODB_URI:mongodb://127.0.0.1:27017/uninotes}
       database: uninotes
+      auto-index-creation: true
   servlet:
     multipart:
       max-file-size: 50MB

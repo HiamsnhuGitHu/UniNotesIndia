@@ -1,6 +1,7 @@
 package com.uninotes.india.entity;
 
 import org.springframework.data.annotation.Id;
+import org.springframework.data.mongodb.core.index.Indexed;
 import org.springframework.data.mongodb.core.mapping.Document;
 import org.springframework.security.core.GrantedAuthority;
 import org.springframework.security.core.authority.SimpleGrantedAuthority;
@@ -17,11 +18,19 @@ public class User implements UserDetails {
     private Long id;
 
     private String fullName;
+
+    @Indexed(unique = true, sparse = true)
     private String mobileNumber;
+
+    @Indexed(unique = true)
     private String email;
+
     private String city;
     private String collegeName;
+
+    @Indexed(unique = true)
     private String username;
+
     private String password;
     private UserRole role;
     private boolean enabled;

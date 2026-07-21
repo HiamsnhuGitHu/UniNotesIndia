@@ -4,6 +4,8 @@ import com.uninotes.india.entity.University;
 import com.uninotes.india.repository.UniversityRepository;
 import com.uninotes.india.service.NoteService;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.cache.annotation.CacheEvict;
+import org.springframework.cache.annotation.Cacheable;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
@@ -21,11 +23,13 @@ public class UniversityController {
     private NoteService noteService;
 
     @GetMapping("/api/universities")
+    @Cacheable(value = "universities")
     public List<University> getAll() {
         return universityRepository.findAll();
     }
 
     @GetMapping("/api/universities/{id}")
+    @Cacheable(value = "universities", key = "#id")
     public ResponseEntity<University> getById(@PathVariable Long id) {
         return universityRepository.findById(id)
                 .map(ResponseEntity::ok)
@@ -33,11 +37,13 @@ public class UniversityController {
     }
 
     @PostMapping("/api/admin/universities")
+    @CacheEvict(value = "universities", allEntries = true)
     public University create(@RequestBody University university) {
         return universityRepository.save(university);
     }
 
     @PutMapping("/api/admin/universities/{id}")
+    @CacheEvict(value = "universities", allEntries = true)
     public ResponseEntity<University> update(@PathVariable Long id, @RequestBody University universityDetails) {
         return universityRepository.findById(id).map(uni -> {
             uni.setName(universityDetails.getName());
@@ -47,6 +53,7 @@ public class UniversityController {
     }
 
     @DeleteMapping("/api/admin/universities/{id}")
+    @CacheEvict(value = "universities", allEntries = true)
     public ResponseEntity<?> delete(@PathVariable Long id) {
         noteService.deleteNotesByUniversityAndCascade(id);
         universityRepository.deleteById(id);

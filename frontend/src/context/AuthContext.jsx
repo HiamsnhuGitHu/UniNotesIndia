@@ -1,4 +1,4 @@
-import React, { createContext, useContext, useState, useEffect } from 'react';
+import React, { createContext, useContext, useState, useEffect, useRef } from 'react';
 import api from '../services/api';
 
 const AuthContext = createContext(null);
@@ -14,9 +14,12 @@ export const AuthProvider = ({ children }) => {
     }
   });
 
+  const hasJustLoggedIn = useRef(false);
+
   const login = async (username, password) => {
     const response = await api.post('/api/auth/login', { username, password });
     const { token: jwt, user: userDetails } = response.data;
+    hasJustLoggedIn.current = true;
     setToken(jwt);
     setUser(userDetails);
     localStorage.setItem('token', jwt);
@@ -48,6 +51,10 @@ export const AuthProvider = ({ children }) => {
   useEffect(() => {
     const fetchCurrentUser = async () => {
       if (token) {
+        if (hasJustLoggedIn.current) {
+          hasJustLoggedIn.current = false;
+          return;
+        }
         try {
           const response = await api.get('/api/auth/me');
           setUser(response.data);
