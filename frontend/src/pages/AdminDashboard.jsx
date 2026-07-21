@@ -3,7 +3,8 @@ import api from '../services/api';
 import { useAuth } from '../context/AuthContext';
 import { 
   Users, School, FileCheck, Download, AlertTriangle, ShieldCheck, 
-  Trash2, ToggleLeft, ToggleRight, Check, X, Plus, Edit2, Send, MessageSquare, ChevronLeft, FileText, Upload 
+  Trash2, ToggleLeft, ToggleRight, Check, X, Plus, Edit2, Send, MessageSquare, ChevronLeft, FileText, Upload,
+  Calendar, Clock, User, Mail, BookOpen
 } from 'lucide-react';
 
 export default function AdminDashboard() {
@@ -1492,33 +1493,129 @@ export default function AdminDashboard() {
           ) : (
             <div class="space-y-3">
               {reports.map(report => (
-                <div key={report.id} class="glass-panel border border-rose-500/20 bg-rose-500/5 p-5 rounded-2xl space-y-3 shadow">
-                  <div class="flex items-start justify-between gap-3">
-                    <div>
-                      <span class="text-[10px] text-rose-400 font-bold uppercase tracking-widest bg-rose-500/10 border border-rose-500/20 px-2 py-0.5 rounded">Flagged</span>
-                      <h4 class="font-bold text-white text-sm mt-2">{report.note?.title}</h4>
-                      <p class="text-xs text-slate-400 mt-1">Reason: "{report.reason}"</p>
+                <div key={report.id} class="glass-panel border border-rose-500/25 bg-rose-950/10 p-6 rounded-2xl space-y-4 shadow-xl">
+                  <div class="flex flex-col sm:flex-row sm:items-start justify-between gap-4">
+                    <div class="space-y-1.5 text-left">
+                      <div class="flex flex-wrap items-center gap-2">
+                        <span class="text-[9px] text-rose-400 font-extrabold uppercase tracking-widest bg-rose-500/10 border border-rose-500/25 px-2 py-0.5 rounded flex items-center gap-1">
+                          <AlertTriangle size={10} />
+                          <span>Flagged Complaint</span>
+                        </span>
+                        <span class="text-[9px] text-slate-400 font-mono">ID: #{report.id}</span>
+                      </div>
+                      <h4 class="font-bold text-white text-base leading-tight mt-1">{report.note?.title || 'Untitled File'}</h4>
+                      
+                      <div class="flex flex-wrap items-center gap-x-3 gap-y-1 text-xs text-slate-400">
+                        <span class="flex items-center gap-1 text-[11px] text-slate-500">
+                          <Calendar size={12} className="shrink-0" />
+                          <span>{report.createdAt ? new Date(report.createdAt).toLocaleDateString(undefined, { dateStyle: 'medium' }) : 'N/A'}</span>
+                        </span>
+                        <span class="text-slate-700">•</span>
+                        <span class="flex items-center gap-1 text-[11px] text-slate-500">
+                          <Clock size={12} className="shrink-0" />
+                          <span>{report.createdAt ? new Date(report.createdAt).toLocaleTimeString(undefined, { timeStyle: 'short' }) : 'N/A'}</span>
+                        </span>
+                      </div>
                     </div>
                     
-                    <div class="flex gap-2">
+                    <div class="flex items-center gap-2 self-end sm:self-auto shrink-0">
                       <button
                         onClick={() => handleDismissReport(report.id)}
-                        class="px-3 py-1.5 bg-slate-800 hover:bg-slate-700 border border-white/5 text-slate-300 rounded-lg text-xs font-semibold cursor-pointer transition"
+                        class="px-3.5 py-1.5 bg-slate-900/60 hover:bg-slate-800 border border-white/5 hover:border-white/10 text-slate-300 rounded-xl text-xs font-semibold cursor-pointer transition duration-200"
                       >
-                        Dismiss
+                        Dismiss Report
                       </button>
                       <button
-                        onClick={() => handleDeleteNoteAdmin(report.note.id)}
-                        class="px-3 py-1.5 bg-rose-600 hover:bg-rose-500 text-white rounded-lg text-xs font-semibold cursor-pointer transition"
+                        onClick={() => handleDeleteNoteAdmin(report.note?.id)}
+                        disabled={!report.note?.id}
+                        class="px-3.5 py-1.5 bg-rose-600/90 hover:bg-rose-600 text-white rounded-xl text-xs font-semibold cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed transition duration-200"
                       >
-                        Delete Note
+                        Delete Document
                       </button>
                     </div>
                   </div>
 
-                  <div class="border-t border-white/5 pt-3 flex justify-between text-[10px] text-slate-500">
-                    <span>Flagged by: <span class="text-blue-400">@{report.user?.username}</span></span>
-                    <span>Note Owner: <span class="text-blue-400">@{report.note?.uploadedBy?.username}</span></span>
+                  {/* Reason Section */}
+                  <div class="bg-rose-500/10 border border-rose-500/20 p-3.5 rounded-xl flex items-start gap-2.5 text-xs text-rose-300 text-left">
+                    <AlertTriangle size={16} className="shrink-0 mt-0.5 text-rose-400" />
+                    <div class="space-y-1">
+                      <span class="font-extrabold block text-[9px] uppercase tracking-widest text-rose-400">Complaint Reason</span>
+                      <p class="leading-relaxed">"{report.reason}"</p>
+                    </div>
+                  </div>
+
+                  {/* Location Segment */}
+                  <div class="bg-slate-950/45 p-4 rounded-xl border border-white/5 text-xs text-left space-y-2.5">
+                    <div class="flex items-center gap-1.5 text-slate-400">
+                      <BookOpen size={13} className="text-blue-400 shrink-0" />
+                      <span class="text-[9px] uppercase font-extrabold tracking-wider text-slate-500">Document Academic Directory Location</span>
+                    </div>
+                    <div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-4 text-slate-300 pt-1.5 border-t border-white/5">
+                      <div>
+                        <span class="text-[9px] text-slate-500 uppercase tracking-wider block">University</span>
+                        <span class="font-medium text-slate-200 line-clamp-2 mt-0.5">{report.note?.university?.name || 'N/A'}</span>
+                      </div>
+                      <div>
+                        <span class="text-[9px] text-slate-500 uppercase tracking-wider block">Branch</span>
+                        <span class="font-medium text-slate-200 line-clamp-2 mt-0.5">{report.note?.branch?.name || 'N/A'}</span>
+                      </div>
+                      <div>
+                        <span class="text-[9px] text-slate-500 uppercase tracking-wider block">Semester</span>
+                        <span class="font-medium text-slate-200 mt-0.5 block">Semester {report.note?.semester || 'N/A'}</span>
+                      </div>
+                      <div>
+                        <span class="text-[9px] text-slate-500 uppercase tracking-wider block">Subject</span>
+                        <span class="font-semibold text-blue-400 mt-0.5 block">{report.note?.subject?.name || 'N/A'}</span>
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Users Segment */}
+                  <div class="grid grid-cols-1 md:grid-cols-2 gap-4 bg-slate-900/10 p-4 rounded-xl border border-white/5 text-left text-xs">
+                    <div class="space-y-2">
+                      <div class="flex items-center gap-1.5 text-slate-400">
+                        <User size={13} className="text-indigo-400 shrink-0" />
+                        <span class="text-[9px] uppercase font-extrabold tracking-wider text-slate-500">Flagged By (Reporter)</span>
+                      </div>
+                      <div class="space-y-1.5 pl-4 flex-1 border-l border-indigo-500/20">
+                        <p class="text-slate-200 font-bold text-sm leading-none">{report.user?.fullName || 'N/A'}</p>
+                        <p class="text-slate-400 font-mono text-[11px] mt-1">@{report.user?.username || 'N/A'}</p>
+                        <p class="text-indigo-400/90 text-[11px] hover:underline cursor-pointer flex items-center gap-1 break-all mt-1">
+                          <Mail size={10} className="shrink-0" />
+                          <span>{report.user?.email || 'N/A'}</span>
+                        </p>
+                        {report.user?.mobileNumber && (
+                          <p class="text-slate-500 text-[10px] font-mono leading-none mt-1">Mob: {report.user.mobileNumber}</p>
+                        )}
+                      </div>
+                    </div>
+
+                    <div class="border-t md:border-t-0 md:border-l border-white/5 pt-4 md:pt-0 md:pl-4 space-y-2">
+                      <div class="flex items-center gap-1.5 text-slate-400">
+                        <User size={13} className="text-emerald-400 shrink-0" />
+                        <span class="text-[9px] uppercase font-extrabold tracking-wider text-slate-500">Note Owner (Uploader)</span>
+                      </div>
+                      <div class="space-y-1.5 pl-4 flex-1 border-l border-emerald-500/20">
+                        <p class="text-slate-200 font-bold text-sm leading-none">{report.note?.uploadedBy?.fullName || 'N/A'}</p>
+                        <p class="text-slate-400 font-mono text-[11px] mt-1">@{report.note?.uploadedBy?.username || 'N/A'}</p>
+                        <p class="text-emerald-400/90 text-[11px] hover:underline cursor-pointer flex items-center gap-1 break-all mt-1">
+                          <Mail size={10} className="shrink-0" />
+                          <span>{report.note?.uploadedBy?.email || 'N/A'}</span>
+                        </p>
+                        {report.note?.uploadedBy?.mobileNumber && (
+                          <p class="text-slate-500 text-[10px] font-mono leading-none mt-1">Mob: {report.note.uploadedBy.mobileNumber}</p>
+                        )}
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Physical File Segment */}
+                  <div class="border-t border-white/5 pt-3 flex flex-wrap items-center justify-between gap-2 text-[10px] text-slate-500">
+                    <span class="flex items-center gap-1">
+                      <FileText size={12} className="shrink-0 text-slate-600" />
+                      <span>Physical File: <span class="font-mono text-slate-400 break-all">{report.note?.fileName || 'N/A'}</span></span>
+                    </span>
+                    <span class="text-slate-600">Type: <span class="uppercase text-slate-400 font-mono">{report.note?.fileType || 'N/A'}</span></span>
                   </div>
                 </div>
               ))}
