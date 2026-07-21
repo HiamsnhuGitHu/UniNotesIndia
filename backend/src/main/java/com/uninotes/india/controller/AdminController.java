@@ -7,6 +7,7 @@ import com.uninotes.india.service.NoteService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.crypto.password.PasswordEncoder;
+import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.web.bind.annotation.*;
 
 import java.time.LocalDateTime;
@@ -200,5 +201,16 @@ public class AdminController {
     @GetMapping("/api/notifications")
     public List<Notification> getNotifications() {
         return notificationRepository.findAll();
+    }
+
+    // Delete platform notifications (Restricted to ROLE_ADMIN only)
+    @DeleteMapping("/api/admin/notifications/{id}")
+    public ResponseEntity<?> deleteNotification(@PathVariable Long id) {
+        User user = (User) SecurityContextHolder.getContext().getAuthentication().getPrincipal();
+        if (user.getRole() != UserRole.ROLE_ADMIN) {
+            return ResponseEntity.status(403).body(Map.of("error", "Only administrator accounts can delete system notifications."));
+        }
+        notificationRepository.deleteById(id);
+        return ResponseEntity.ok(Map.of("message", "Platform announcement deleted successfully."));
     }
 }

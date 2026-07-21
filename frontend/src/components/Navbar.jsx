@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { Link, useNavigate, useLocation } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import api from '../services/api';
-import { BookOpen, User, LogOut, LayoutDashboard, FileText, HelpCircle, ShieldAlert, Menu, X, Bell, AlertCircle, Plus, Send } from 'lucide-react';
+import { BookOpen, User, LogOut, LayoutDashboard, FileText, HelpCircle, ShieldAlert, Menu, X, Bell, AlertCircle, Plus, Send, Trash2 } from 'lucide-react';
 
 const Navbar = () => {
   const { user, logout, isAuthenticated } = useAuth();
@@ -73,6 +73,20 @@ const Navbar = () => {
       console.error("Failed to create notification:", err);
     } finally {
       setSendingNotif(false);
+    }
+  };
+
+  const handleDeleteNotif = async (id) => {
+    if (!window.confirm('Delete this announcement permanently for all users?')) return;
+    try {
+      await api.delete(`/api/admin/notifications/${id}`);
+      setNotifications(prev => prev.filter(n => n.id !== id));
+      const updated = new Set(readIds);
+      updated.delete(id);
+      setReadIds(updated);
+      localStorage.setItem('read_notifications', JSON.stringify(Array.from(updated)));
+    } catch (err) {
+      console.error("Failed to delete notification:", err);
     }
   };
 
@@ -200,9 +214,23 @@ const Navbar = () => {
                                 <span class={`text-xs font-bold leading-tight block ${isRead ? 'text-slate-300' : 'text-white'}`}>
                                   {n.title}
                                 </span>
-                                {!isRead && (
-                                  <span class="h-2 w-2 rounded-full bg-blue-500 shrink-0 mt-1"></span>
-                                )}
+                                <div class="flex items-center gap-1.5 shrink-0">
+                                  {!isRead && (
+                                    <span class="h-2 w-2 rounded-full bg-blue-500 mt-1"></span>
+                                  )}
+                                  {user?.role === 'ROLE_ADMIN' && (
+                                    <button
+                                      onClick={(e) => {
+                                        e.stopPropagation();
+                                        handleDeleteNotif(n.id);
+                                      }}
+                                      class="text-slate-500 hover:text-rose-400 p-0.5 rounded transition cursor-pointer"
+                                      title="Delete Notification"
+                                    >
+                                      <Trash2 size={11} />
+                                    </button>
+                                  )}
+                                </div>
                               </div>
                               <p class="text-[11px] text-slate-400 line-clamp-2 leading-relaxed">
                                 {n.message}
