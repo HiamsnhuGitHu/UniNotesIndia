@@ -524,7 +524,7 @@ export default function NotesNavigator() {
                   onClick={handleUploadNotesRedirect}
                   class="flex items-center gap-1.5 px-4 py-2 bg-blue-600 hover:bg-blue-500 text-white rounded-xl text-xs font-semibold cursor-pointer transition shadow shadow-blue-500/20"
                 >
-                  <Upload size={14} className="rotate-180" />
+                  <Upload size={14} />
                   <span>Upload Notes</span>
                 </button>
               </div>
@@ -536,7 +536,7 @@ export default function NotesNavigator() {
                     onClick={handleUploadNotesRedirect}
                     class="flex items-center gap-1.5 px-4 py-2 bg-blue-600 hover:bg-blue-500 text-white rounded-xl text-xs font-semibold cursor-pointer transition shadow shadow-blue-500/20"
                   >
-                    <Upload size={14} className="rotate-180" />
+                    <Upload size={14} />
                     <span>Upload Notes</span>
                   </button>
                 </div>
