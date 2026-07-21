@@ -3,7 +3,7 @@ import api from '../services/api';
 import { useAuth } from '../context/AuthContext';
 import { 
   Users, School, FileCheck, Download, AlertTriangle, ShieldCheck, 
-  Trash2, ToggleLeft, ToggleRight, Check, X, Plus, Edit2, Send, MessageSquare 
+  Trash2, ToggleLeft, ToggleRight, Check, X, Plus, Edit2, Send, MessageSquare, ChevronLeft, FileText, Upload 
 } from 'lucide-react';
 
 export default function AdminDashboard() {
@@ -47,6 +47,15 @@ export default function AdminDashboard() {
   const [showPreviewModal, setShowPreviewModal] = useState(false);
   const [checkingPreview, setCheckingPreview] = useState(false);
   const [previewError, setPreviewError] = useState(null);
+
+  // Upload modal states
+  const [showUploadModal, setShowUploadModal] = useState(false);
+  const [uploadModalSubject, setUploadModalSubject] = useState(null);
+  const [uploadTitle, setUploadTitle] = useState('');
+  const [uploadDesc, setUploadDesc] = useState('');
+  const [uploadNoteType, setUploadNoteType] = useState('NOTE');
+  const [uploadFiles, setUploadFiles] = useState([]);
+  const [uploadLoading, setUploadLoading] = useState(false);
 
   // Announcement fields
   const [notifTitle, setNotifTitle] = useState('');
@@ -208,6 +217,45 @@ export default function AdminDashboard() {
       checkPreview();
     }
   }, [showPreviewModal, previewNote]);
+
+  const handleUploadSubmit = async (e) => {
+    e.preventDefault();
+    if (!uploadTitle.trim() || !uploadModalSubject || uploadFiles.length === 0) {
+      showAlert('error', 'Please fill in Title and choose a file.');
+      return;
+    }
+    setUploadLoading(true);
+    const formData = new FormData();
+    uploadFiles.forEach(f => {
+      formData.append('file', f);
+    });
+    formData.append('title', uploadTitle.trim());
+    formData.append('description', uploadDesc.trim());
+    formData.append('universityId', selectedUni.id);
+    formData.append('branchId', selectedBranch.id);
+    formData.append('semester', selectedSem);
+    formData.append('subjectId', uploadModalSubject.id);
+    formData.append('noteType', uploadNoteType);
+
+    try {
+      await api.post('/api/notes/upload', formData, {
+        headers: { 'Content-Type': 'multipart/form-data' }
+      });
+      showAlert('success', 'Material uploaded successfully!');
+      setShowUploadModal(false);
+      setUploadTitle('');
+      setUploadDesc('');
+      setUploadFiles([]);
+      if (selectedSubject && selectedSubject.id === uploadModalSubject.id) {
+        fetchSubjectNotes(selectedUni.id, selectedBranch.id, selectedSubject.id);
+      }
+    } catch (err) {
+      console.error("Upload failed:", err);
+      showAlert('error', 'Failed to upload material.');
+    } finally {
+      setUploadLoading(false);
+    }
+  };
 
   const fetchReports = async () => {
     try {
@@ -776,9 +824,18 @@ export default function AdminDashboard() {
           {selectedUni && !selectedBranch && (
             <div class="space-y-6">
               <div class="flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-4 bg-slate-900/20 border border-white/5 p-4 rounded-2xl">
-                <div class="space-y-1">
-                  <h4 class="font-display font-extrabold text-white text-base">Select Branch</h4>
-                  <p class="text-[10px] text-slate-500 font-sans">Currently browsing engineering branches of <span class="text-purple-400 font-semibold">{selectedUni.name}</span>.</p>
+                <div class="flex items-center gap-3">
+                  <button 
+                    onClick={() => setSelectedUni(null)}
+                    class="p-2 bg-slate-800 hover:bg-slate-700 text-slate-300 hover:text-white rounded-lg border border-white/5 cursor-pointer transition"
+                    title="Back to Universities"
+                  >
+                    <ChevronLeft size={16} />
+                  </button>
+                  <div class="space-y-1">
+                    <h4 class="font-display font-extrabold text-white text-base">Select Branch</h4>
+                    <p class="text-[10px] text-slate-500 font-sans">Browsing branches of <span class="text-purple-400 font-semibold">{selectedUni.name}</span>.</p>
+                  </div>
                 </div>
                 <form onSubmit={handleAddBranch} class="flex items-center gap-2 sm:max-w-xs w-full">
                   <input
@@ -837,9 +894,20 @@ export default function AdminDashboard() {
           {/* Step 3: Semester Selection Cards */}
           {selectedUni && selectedBranch && !selectedSem && (
             <div class="space-y-6">
-              <div class="bg-slate-900/20 border border-white/5 p-4 rounded-2xl">
-                <h4 class="font-display font-extrabold text-white text-base">Select Semester</h4>
-                <p class="text-[10px] text-slate-500 font-sans">Currently browsing semesters of <span class="text-purple-400 font-semibold">{selectedBranch.name}</span> in <span class="text-blue-400 font-semibold">{selectedUni.name}</span>.</p>
+              <div class="flex items-center justify-between gap-4 bg-slate-900/20 border border-white/5 p-4 rounded-2xl">
+                <div class="flex items-center gap-3">
+                  <button 
+                    onClick={() => setSelectedBranch(null)}
+                    class="p-2 bg-slate-800 hover:bg-slate-700 text-slate-300 hover:text-white rounded-lg border border-white/5 cursor-pointer transition"
+                    title="Back to Branches"
+                  >
+                    <ChevronLeft size={16} />
+                  </button>
+                  <div class="space-y-1">
+                    <h4 class="font-display font-extrabold text-white text-base">Select Semester</h4>
+                    <p class="text-[10px] text-slate-500 font-sans">Browsing semesters of <span class="text-purple-400 font-semibold">{selectedBranch.name}</span>.</p>
+                  </div>
+                </div>
               </div>
 
               <div class="grid grid-cols-2 sm:grid-cols-4 gap-4">
@@ -867,9 +935,18 @@ export default function AdminDashboard() {
           {selectedUni && selectedBranch && selectedSem && !selectedSubject && (
             <div class="space-y-6">
               <div class="flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-4 bg-slate-900/20 border border-white/5 p-4 rounded-2xl">
-                <div class="space-y-1">
-                  <h4 class="font-display font-extrabold text-white text-base">Select Subject</h4>
-                  <p class="text-[10px] text-slate-500 font-sans">Currently browsing subjects of Semester {selectedSem} in <span class="text-indigo-400 font-semibold">{selectedBranch.name}</span>.</p>
+                <div class="flex items-center gap-3">
+                  <button 
+                    onClick={() => setSelectedSem(null)}
+                    class="p-2 bg-slate-800 hover:bg-slate-700 text-slate-300 hover:text-white rounded-lg border border-white/5 cursor-pointer transition"
+                    title="Back to Semesters"
+                  >
+                    <ChevronLeft size={16} />
+                  </button>
+                  <div class="space-y-1">
+                    <h4 class="font-display font-extrabold text-white text-base">Select Subject</h4>
+                    <p class="text-[10px] text-slate-500 font-sans">Browsing subjects of Semester {selectedSem} in <span class="text-indigo-400 font-semibold">{selectedBranch.name}</span>.</p>
+                  </div>
                 </div>
                 <form onSubmit={handleAddSubject} class="flex items-center gap-2 sm:max-w-md w-full">
                   <input
@@ -905,23 +982,37 @@ export default function AdminDashboard() {
                         setSelectedSubject(s);
                         fetchSubjectNotes(selectedUni.id, selectedBranch.id, s.id);
                       }}
-                      class="bg-slate-900/40 hover:bg-slate-900/70 border border-white/5 hover:border-indigo-500/40 p-4 rounded-xl flex items-center justify-between gap-3 cursor-pointer group transition duration-300 shadow-md relative overflow-hidden"
+                      class="bg-slate-900/40 hover:bg-slate-900/70 border border-white/5 hover:border-indigo-500/40 p-4 rounded-xl flex flex-col justify-between gap-3 cursor-pointer group transition duration-300 shadow-md relative overflow-hidden"
                     >
                       <div class="absolute -right-6 -bottom-6 w-16 h-16 bg-indigo-500/5 rounded-full group-hover:scale-150 transition-all duration-300"></div>
-                      <div class="min-w-0 relative z-10 text-left pr-2 font-sans">
+                      <div class="min-w-0 relative z-10 text-left font-sans flex-1">
                         <span class="text-xs font-bold text-slate-300 group-hover:text-white truncate block">{s.name}</span>
                         <span class="text-[9px] text-slate-500 block mt-0.5 font-sans">Semester {s.semester}</span>
                       </div>
-                      <button 
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          handleDeleteSubject(s.id);
-                        }} 
-                        class="text-slate-500 hover:text-rose-400 p-1 rounded hover:bg-rose-500/10 cursor-pointer transition shrink-0 relative z-10"
-                        title="Delete Subject"
-                      >
-                        <Trash2 size={13} />
-                      </button>
+                      
+                      <div class="flex items-center justify-between gap-2 border-t border-white/5 pt-2 relative z-10">
+                        <button
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            setUploadModalSubject(s);
+                            setShowUploadModal(true);
+                          }}
+                          class="px-2 py-1 bg-blue-600/20 hover:bg-blue-600 hover:text-white text-blue-400 rounded text-[9px] font-bold cursor-pointer transition flex items-center gap-1 shrink-0"
+                        >
+                          <Upload size={10} />
+                          <span>Upload</span>
+                        </button>
+                        <button 
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            handleDeleteSubject(s.id);
+                          }} 
+                          class="text-slate-500 hover:text-rose-400 p-1 rounded hover:bg-rose-500/10 cursor-pointer transition shrink-0"
+                          title="Delete Subject"
+                        >
+                          <Trash2 size={13} />
+                        </button>
+                      </div>
                     </div>
                   ));
                 })()}
@@ -932,9 +1023,33 @@ export default function AdminDashboard() {
           {/* Step 5: Uploaded Materials List */}
           {selectedUni && selectedBranch && selectedSem && selectedSubject && (
             <div class="space-y-6">
-              <div class="bg-slate-900/20 border border-white/5 p-4 rounded-2xl">
-                <h4 class="font-display font-extrabold text-white text-base">Uploaded Materials</h4>
-                <p class="text-[10px] text-slate-500 font-sans">Currently showing documents matching subject: <span class="text-emerald-400 font-semibold">{selectedSubject.name}</span>.</p>
+              <div class="flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-4 bg-slate-900/20 border border-white/5 p-4 rounded-2xl">
+                <div class="flex items-center gap-3">
+                  <button 
+                    onClick={() => {
+                      setSelectedSubject(null);
+                      setSubjectNotes([]);
+                    }}
+                    class="p-2 bg-slate-800 hover:bg-slate-700 text-slate-300 hover:text-white rounded-lg border border-white/5 cursor-pointer transition"
+                    title="Back to Subjects"
+                  >
+                    <ChevronLeft size={16} />
+                  </button>
+                  <div class="space-y-1">
+                    <h4 class="font-display font-extrabold text-white text-base">Uploaded Materials</h4>
+                    <p class="text-[10px] text-slate-500 font-sans">Showing matching documents for subject: <span class="text-emerald-400 font-semibold">{selectedSubject.name}</span>.</p>
+                  </div>
+                </div>
+                <button
+                  onClick={() => {
+                    setUploadModalSubject(selectedSubject);
+                    setShowUploadModal(true);
+                  }}
+                  class="flex items-center gap-1.5 px-4 py-2 bg-blue-600 hover:bg-blue-500 text-white rounded-xl text-xs font-semibold cursor-pointer transition shadow shadow-blue-500/20"
+                >
+                  <Plus size={14} />
+                  <span>Upload Material</span>
+                </button>
               </div>
 
               <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
@@ -1264,6 +1379,115 @@ export default function AdminDashboard() {
               )}
             </div>
 
+          </div>
+        </div>
+      )}
+
+      {/* Modal: Upload Material Popup */}
+      {showUploadModal && uploadModalSubject && (
+        <div class="fixed inset-0 z-[100] flex items-center justify-center bg-slate-950/85 backdrop-blur-sm p-4 font-sans text-left">
+          <div class="w-full max-w-md glass-panel rounded-2xl border border-white/10 p-6 space-y-4 shadow-2xl relative">
+            <div class="border-b border-white/5 pb-2">
+              <h3 class="font-display font-extrabold text-white text-lg">Upload Note / Material</h3>
+              <p class="text-[9px] text-slate-400 mt-1 font-mono tracking-tight uppercase">
+                {selectedUni?.name} • {selectedBranch?.name} • Sem {selectedSem} • <span class="text-blue-400">{uploadModalSubject.name}</span>
+              </p>
+            </div>
+
+            <form onSubmit={handleUploadSubmit} class="space-y-4 text-xs">
+              <div>
+                <label class="block text-slate-400 mb-1 font-semibold uppercase tracking-wider">Document Title</label>
+                <input
+                  type="text"
+                  required
+                  value={uploadTitle}
+                  onChange={e => setUploadTitle(e.target.value)}
+                  placeholder="e.g. Unit 3 Electrostatics Notes"
+                  class="w-full bg-slate-900 border border-slate-700 rounded-lg px-3 py-2 text-white outline-none focus:border-blue-500"
+                />
+              </div>
+
+              <div>
+                <label class="block text-slate-400 mb-1 font-semibold uppercase tracking-wider">Short Description</label>
+                <textarea
+                  value={uploadDesc}
+                  onChange={e => setUploadDesc(e.target.value)}
+                  placeholder="Brief description of the uploaded syllabus topic or contents..."
+                  rows={2}
+                  class="w-full bg-slate-900 border border-slate-700 rounded-lg px-3 py-2 text-white outline-none focus:border-blue-500 font-sans resize-none"
+                />
+              </div>
+
+              <div>
+                <label class="block text-slate-400 mb-1 font-semibold uppercase tracking-wider">Note Type</label>
+                <select
+                  value={uploadNoteType}
+                  onChange={e => setUploadNoteType(e.target.value)}
+                  class="w-full bg-slate-900 border border-slate-700 rounded-lg p-2 text-white outline-none"
+                >
+                  <option value="NOTE">Class Notes</option>
+                  <option value="PAPER">Previous Year Question Paper</option>
+                  <option value="SYLLABUS">Branch Syllabus / Curriculum</option>
+                </select>
+              </div>
+
+              <div>
+                <label class="block text-slate-400 mb-1 font-semibold uppercase tracking-wider">Select PDF or Image File</label>
+                <div class="flex items-center gap-2">
+                  <input
+                    type="file"
+                    required
+                    accept=".pdf,image/*"
+                    onChange={e => {
+                      if (e.target.files && e.target.files.length > 0) {
+                        setUploadFiles(Array.from(e.target.files));
+                      }
+                    }}
+                    class="hidden"
+                    id="modal-upload-file-input"
+                  />
+                  <label 
+                    htmlFor="modal-upload-file-input"
+                    class="flex items-center gap-1.5 px-3 py-2 bg-slate-800 hover:bg-slate-700 border border-white/5 rounded-lg text-slate-300 hover:text-white cursor-pointer transition font-semibold"
+                  >
+                    <Upload size={12} />
+                    <span>Choose File</span>
+                  </label>
+                  <span class="text-[10px] text-slate-400 truncate max-w-[200px]">
+                    {uploadFiles.length > 0 ? uploadFiles[0].name : 'No file selected'}
+                  </span>
+                </div>
+              </div>
+
+              <div class="flex justify-end gap-2 pt-2 text-xs font-semibold">
+                <button
+                  type="button"
+                  onClick={() => {
+                    setShowUploadModal(false);
+                    setUploadTitle('');
+                    setUploadDesc('');
+                    setUploadFiles([]);
+                  }}
+                  class="px-4 py-2 bg-slate-800 hover:bg-slate-700 text-slate-300 rounded-xl border border-white/5 cursor-pointer transition"
+                >
+                  Cancel
+                </button>
+                <button
+                  type="submit"
+                  disabled={uploadLoading}
+                  class="px-4 py-2 bg-blue-600 hover:bg-blue-500 text-white rounded-xl cursor-pointer transition flex items-center gap-1.5 disabled:opacity-50"
+                >
+                  {uploadLoading ? (
+                    <>
+                      <div class="h-3 w-3 border-2 border-white/20 border-t-white rounded-full animate-spin"></div>
+                      <span>Uploading...</span>
+                    </>
+                  ) : (
+                    <span>Upload</span>
+                  )}
+                </button>
+              </div>
+            </form>
           </div>
         </div>
       )}
