@@ -7,6 +7,8 @@ export default function UploadForm() {
   const navigate = useNavigate();
   const location = useLocation();
 
+  const isPreFilled = !!(location.state?.universityId && location.state?.branchId && location.state?.semester && location.state?.subjectId);
+
   // Reference lists
   const [universities, setUniversities] = useState([]);
   const [branches, setBranches] = useState([]);
@@ -175,6 +177,14 @@ export default function UploadForm() {
       <div>
         <h1 class="font-display text-2xl font-extrabold text-white">Upload Study Materials</h1>
         <p class="text-xs text-slate-400 mt-1">Submit your classroom notes, syllabi, or question papers to build the community pool.</p>
+        {isPreFilled && (
+          <div class="mt-3 flex items-center gap-1.5 text-xs text-slate-400 bg-slate-900/40 px-3 py-2.5 rounded-xl border border-white/5 w-fit">
+            <span class="font-semibold text-slate-300">Target Folder:</span>
+            <span class="text-blue-400 font-medium">
+              {universities.find(u => String(u.id) === uniId)?.name || 'University'} • {branches.find(b => String(b.id) === branchId)?.name || 'Branch'} • Semester {semester} • {subjects.find(s => String(s.id) === subjectId)?.name || 'Subject'}
+            </span>
+          </div>
+        )}
       </div>
 
       {alert.text && !uploadSuccess && (
@@ -324,84 +334,88 @@ export default function UploadForm() {
               </select>
             </div>
 
-            {/* University */}
-            <div>
-              <label class="block text-xs font-semibold text-slate-400 mb-1.5 uppercase tracking-wider">University</label>
-              <select
-                required
-                value={uniId}
-                onChange={(e) => setUniId(e.target.value)}
-                class="w-full text-xs bg-slate-900/60 rounded-xl border border-slate-700 p-2.5 text-white outline-none"
-              >
-                <option value="">Select University</option>
-                {universities.map(u => (
-                  <option key={u.id} value={u.id} class="bg-slate-950">{u.name}</option>
-                ))}
-              </select>
-            </div>
+            {!isPreFilled && (
+              <>
+                {/* University */}
+                <div>
+                  <label class="block text-xs font-semibold text-slate-400 mb-1.5 uppercase tracking-wider">University</label>
+                  <select
+                    required
+                    value={uniId}
+                    onChange={(e) => setUniId(e.target.value)}
+                    class="w-full text-xs bg-slate-900/60 rounded-xl border border-slate-700 p-2.5 text-white outline-none"
+                  >
+                    <option value="">Select University</option>
+                    {universities.map(u => (
+                      <option key={u.id} value={u.id} class="bg-slate-950">{u.name}</option>
+                    ))}
+                  </select>
+                </div>
 
-            {/* Branch */}
-            <div>
-              <label class="block text-xs font-semibold text-slate-400 mb-1.5 uppercase tracking-wider">Branch</label>
-              <select
-                required
-                value={branchId}
-                onChange={(e) => setBranchId(e.target.value)}
-                class="w-full text-xs bg-slate-900/60 rounded-xl border border-slate-700 p-2.5 text-white outline-none"
-              >
-                <option value="">Select Branch</option>
-                {branches.map(b => (
-                  <option key={b.id} value={b.id} class="bg-slate-950">{b.name}</option>
-                ))}
-              </select>
-            </div>
+                {/* Branch */}
+                <div>
+                  <label class="block text-xs font-semibold text-slate-400 mb-1.5 uppercase tracking-wider">Branch</label>
+                  <select
+                    required
+                    value={branchId}
+                    onChange={(e) => setBranchId(e.target.value)}
+                    class="w-full text-xs bg-slate-900/60 rounded-xl border border-slate-700 p-2.5 text-white outline-none"
+                  >
+                    <option value="">Select Branch</option>
+                    {branches.map(b => (
+                      <option key={b.id} value={b.id} class="bg-slate-950">{b.name}</option>
+                    ))}
+                  </select>
+                </div>
 
-            {/* Semester */}
-            <div>
-              <label class="block text-xs font-semibold text-slate-400 mb-1.5 uppercase tracking-wider">Semester</label>
-              <select
-                required
-                value={semester}
-                onChange={(e) => setSemester(Number(e.target.value))}
-                class="w-full text-xs bg-slate-900/60 rounded-xl border border-slate-700 p-2.5 text-white outline-none"
-              >
-                {[1, 2, 3, 4, 5, 6, 7, 8].map(s => (
-                  <option key={s} value={s} class="bg-slate-950">Semester {s}</option>
-                ))}
-              </select>
-            </div>
+                {/* Semester */}
+                <div>
+                  <label class="block text-xs font-semibold text-slate-400 mb-1.5 uppercase tracking-wider">Semester</label>
+                  <select
+                    required
+                    value={semester}
+                    onChange={(e) => setSemester(Number(e.target.value))}
+                    class="w-full text-xs bg-slate-900/60 rounded-xl border border-slate-700 p-2.5 text-white outline-none"
+                  >
+                    {[1, 2, 3, 4, 5, 6, 7, 8].map(s => (
+                      <option key={s} value={s} class="bg-slate-950">Semester {s}</option>
+                    ))}
+                  </select>
+                </div>
 
-            {/* Subject */}
-            <div class="sm:col-span-2">
-              <div class="flex items-center justify-between mb-1.5">
-                <label class="block text-xs font-semibold text-slate-400 uppercase tracking-wider">Subject Mapping</label>
-                <button
-                  type="button"
-                  onClick={() => {
-                    if (!branchId) {
-                      showAlert('error', 'Please select a branch first before adding a subject.');
-                      return;
-                    }
-                    setShowSubjectModal(true);
-                  }}
-                  class="text-xs text-blue-400 hover:text-blue-300 font-semibold cursor-pointer"
-                >
-                  + Add New Subject
-                </button>
-              </div>
-              <select
-                required
-                disabled={!branchId}
-                value={subjectId}
-                onChange={(e) => setSubjectId(e.target.value)}
-                class="w-full text-xs bg-slate-900/60 rounded-xl border border-slate-700 p-2.5 text-white outline-none disabled:opacity-50"
-              >
-                <option value="">Select Subject</option>
-                {subjects.map(s => (
-                  <option key={s.id} value={s.id} class="bg-slate-950">{s.name}</option>
-                ))}
-              </select>
-            </div>
+                {/* Subject */}
+                <div class="sm:col-span-2">
+                  <div class="flex items-center justify-between mb-1.5">
+                    <label class="block text-xs font-semibold text-slate-400 uppercase tracking-wider">Subject Mapping</label>
+                    <button
+                      type="button"
+                      onClick={() => {
+                        if (!branchId) {
+                          showAlert('error', 'Please select a branch first before adding a subject.');
+                          return;
+                        }
+                        setShowSubjectModal(true);
+                      }}
+                      class="text-xs text-blue-400 hover:text-blue-300 font-semibold cursor-pointer"
+                    >
+                      + Add New Subject
+                    </button>
+                  </div>
+                  <select
+                    required
+                    disabled={!branchId}
+                    value={subjectId}
+                    onChange={(e) => setSubjectId(e.target.value)}
+                    class="w-full text-xs bg-slate-900/60 rounded-xl border border-slate-700 p-2.5 text-white outline-none disabled:opacity-50"
+                  >
+                    <option value="">Select Subject</option>
+                    {subjects.map(s => (
+                      <option key={s.id} value={s.id} class="bg-slate-950">{s.name}</option>
+                    ))}
+                  </select>
+                </div>
+              </>
+            )}
 
           </div>
 
