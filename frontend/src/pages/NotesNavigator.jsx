@@ -24,8 +24,14 @@ export default function NotesNavigator() {
   };
 
   // Navigation levels
-  const [universities, setUniversities] = useState([]);
-  const [branches, setBranches] = useState([]);
+  const [universities, setUniversities] = useState(() => {
+    const saved = sessionStorage.getItem('cached_universities');
+    return saved ? JSON.parse(saved) : [];
+  });
+  const [branches, setBranches] = useState(() => {
+    const saved = sessionStorage.getItem('cached_branches');
+    return saved ? JSON.parse(saved) : [];
+  });
   const [subjects, setSubjects] = useState([]);
   const [notes, setNotes] = useState([]);
 
@@ -77,20 +83,38 @@ export default function NotesNavigator() {
   useEffect(() => {
     const init = async () => {
       try {
-        const [uniRes, branchRes, bmarkRes] = await Promise.all([
-          api.get('/api/universities'),
-          api.get('/api/branches'),
-          api.get('/api/notes/bookmarks')
-        ]);
-        setUniversities(uniRes.data);
-        setBranches(branchRes.data);
-        setBookmarkedIds(new Set(bmarkRes.data.map(b => b.note.id)));
+        let loadedUnis = universities;
+        let loadedBranches = branches;
+
+        // Fetch universities and branches only if not cached
+        if (loadedUnis.length === 0 || loadedBranches.length === 0) {
+          const [uniRes, branchRes] = await Promise.all([
+            api.get('/api/universities'),
+            api.get('/api/branches')
+          ]);
+          loadedUnis = uniRes.data;
+          loadedBranches = branchRes.data;
+          setUniversities(loadedUnis);
+          setBranches(loadedBranches);
+          sessionStorage.setItem('cached_universities', JSON.stringify(loadedUnis));
+          sessionStorage.setItem('cached_branches', JSON.stringify(loadedBranches));
+        }
+
+        // Fetch bookmarks only if user is logged in
+        if (user) {
+          try {
+            const bmarkRes = await api.get('/api/notes/bookmarks');
+            setBookmarkedIds(new Set(bmarkRes.data.map(b => b.note.id)));
+          } catch (bmarkErr) {
+            console.error('Failed to load bookmarks', bmarkErr);
+          }
+        }
 
         // Handle parameters passed from Dashboard search
         if (location.state) {
           const { universityId, query } = location.state;
           if (universityId) {
-            const matchedUni = uniRes.data.find(u => u.id === Number(universityId));
+            const matchedUni = loadedUnis.find(u => u.id === Number(universityId));
             if (matchedUni) setSelectedUni(matchedUni);
           }
           if (query) {
@@ -103,7 +127,7 @@ export default function NotesNavigator() {
       }
     };
     init();
-  }, [location]);
+  }, [location, user]);
 
   // Verify preview is available on mount/open
   useEffect(() => {
@@ -148,9 +172,18 @@ export default function NotesNavigator() {
   // Fetch subjects when branch & semester are selected
   useEffect(() => {
     if (selectedBranch && selectedSem) {
-      api.get(`/api/subjects/branch/${selectedBranch.id}/semester/${selectedSem}`)
-        .then(res => setSubjects(res.data))
-        .catch(err => console.error(err));
+      const cacheKey = `subjects_${selectedBranch.id}_${selectedSem}`;
+      const cached = sessionStorage.getItem(cacheKey);
+      if (cached) {
+        setSubjects(JSON.parse(cached));
+      } else {
+        api.get(`/api/subjects/branch/${selectedBranch.id}/semester/${selectedSem}`)
+          .then(res => {
+            setSubjects(res.data);
+            sessionStorage.setItem(cacheKey, JSON.stringify(res.data));
+          })
+          .catch(err => console.error(err));
+      }
     }
   }, [selectedBranch, selectedSem]);
 
