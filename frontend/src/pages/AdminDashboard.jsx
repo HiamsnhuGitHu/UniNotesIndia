@@ -38,6 +38,7 @@ export default function AdminDashboard() {
   // Selected Directories
   const [selectedUni, setSelectedUni] = useState(null);
   const [selectedBranch, setSelectedBranch] = useState(null);
+  const [selectedSem, setSelectedSem] = useState(null);
   const [selectedSubject, setSelectedSubject] = useState(null);
   const [subjectNotes, setSubjectNotes] = useState([]);
 
@@ -287,6 +288,7 @@ export default function AdminDashboard() {
       if (selectedUni?.id === id) {
         setSelectedUni(null);
         setSelectedBranch(null);
+        setSelectedSem(null);
         setSelectedSubject(null);
         setSubjectNotes([]);
       }
@@ -321,6 +323,7 @@ export default function AdminDashboard() {
       showAlert('success', 'Branch deleted.');
       if (selectedBranch?.id === id) {
         setSelectedBranch(null);
+        setSelectedSem(null);
         setSelectedSubject(null);
         setSubjectNotes([]);
       }
@@ -623,9 +626,7 @@ export default function AdminDashboard() {
             </table>
           </div>
         </div>
-      )}
-
-      {/* Tab: Directory Management (Universities, Branches, Subjects CRUD, and Uploaded Materials) */}
+            {/* Tab: Directory Management (Universities, Branches, Subjects CRUD, and Uploaded Materials) */}
       {activeTab === 'directories' && (
         <div class="space-y-6">
           
@@ -635,6 +636,7 @@ export default function AdminDashboard() {
               onClick={() => {
                 setSelectedUni(null);
                 setSelectedBranch(null);
+                setSelectedSem(null);
                 setSelectedSubject(null);
                 setSubjectNotes([]);
               }} 
@@ -649,6 +651,7 @@ export default function AdminDashboard() {
                 <button 
                   onClick={() => {
                     setSelectedBranch(null);
+                    setSelectedSem(null);
                     setSelectedSubject(null);
                     setSubjectNotes([]);
                   }} 
@@ -665,6 +668,7 @@ export default function AdminDashboard() {
                 <span class="text-slate-600">/</span>
                 <button 
                   onClick={() => {
+                    setSelectedSem(null);
                     setSelectedSubject(null);
                     setSubjectNotes([]);
                   }} 
@@ -672,6 +676,21 @@ export default function AdminDashboard() {
                   title={selectedBranch.name}
                 >
                   {selectedBranch.name}
+                </button>
+              </>
+            )}
+
+            {selectedSem && (
+              <>
+                <span class="text-slate-600">/</span>
+                <button 
+                  onClick={() => {
+                    setSelectedSubject(null);
+                    setSubjectNotes([]);
+                  }} 
+                  class="hover:text-emerald-400 cursor-pointer transition font-sans"
+                >
+                  Semester {selectedSem}
                 </button>
               </>
             )}
@@ -724,6 +743,7 @@ export default function AdminDashboard() {
                       onClick={() => {
                         setSelectedUni(u);
                         setSelectedBranch(null);
+                        setSelectedSem(null);
                         setSelectedSubject(null);
                         setSubjectNotes([]);
                         setNewBranch(prev => ({ ...prev, universityId: String(u.id) }));
@@ -786,6 +806,7 @@ export default function AdminDashboard() {
                       key={b.id}
                       onClick={() => {
                         setSelectedBranch(b);
+                        setSelectedSem(null);
                         setSelectedSubject(null);
                         setSubjectNotes([]);
                         setNewSubject(prev => ({ ...prev, branchId: String(b.id) }));
@@ -811,42 +832,67 @@ export default function AdminDashboard() {
             </div>
           )}
 
-          {/* Step 3: Subjects List */}
-          {selectedUni && selectedBranch && !selectedSubject && (
+          {/* Step 3: Semester Selection Cards */}
+          {selectedUni && selectedBranch && !selectedSem && (
+            <div class="space-y-6">
+              <div class="bg-slate-900/20 border border-white/5 p-4 rounded-2xl">
+                <h4 class="font-display font-extrabold text-white text-base">Select Semester</h4>
+                <p class="text-[10px] text-slate-500 font-sans">Currently browsing semesters of <span class="text-purple-400 font-semibold">{selectedBranch.name}</span> in <span class="text-blue-400 font-semibold">{selectedUni.name}</span>.</p>
+              </div>
+
+              <div class="grid grid-cols-2 sm:grid-cols-4 gap-4">
+                {[1, 2, 3, 4, 5, 6, 7, 8].map(sem => (
+                  <div 
+                    key={sem}
+                    onClick={() => {
+                      setSelectedSem(sem);
+                      setSelectedSubject(null);
+                      setSubjectNotes([]);
+                      setNewSubject(prev => ({ ...prev, semester: sem, universityId: String(selectedUni.id), branchId: String(selectedBranch.id) }));
+                    }}
+                    class="bg-slate-900/40 hover:bg-slate-950/70 border border-white/5 hover:border-blue-500/40 p-8 rounded-xl flex flex-col items-center justify-center cursor-pointer group transition duration-300 shadow-md text-center relative overflow-hidden"
+                  >
+                    <div class="absolute -right-6 -bottom-6 w-16 h-16 bg-blue-500/5 rounded-full group-hover:scale-150 transition-all duration-300"></div>
+                    <span class="text-4xl font-extrabold text-blue-500 group-hover:text-blue-400 font-display transition duration-300 relative z-10">{sem}</span>
+                    <span class="text-[10px] font-bold text-slate-400 uppercase tracking-widest mt-2 group-hover:text-white transition duration-300 relative z-10 font-sans">Semester</span>
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
+
+          {/* Step 4: Subjects List */}
+          {selectedUni && selectedBranch && selectedSem && !selectedSubject && (
             <div class="space-y-6">
               <div class="flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-4 bg-slate-900/20 border border-white/5 p-4 rounded-2xl">
                 <div class="space-y-1">
                   <h4 class="font-display font-extrabold text-white text-base">Select Subject</h4>
-                  <p class="text-[10px] text-slate-500 font-sans">Currently browsing subjects of <span class="text-indigo-400 font-semibold">{selectedBranch.name}</span>.</p>
+                  <p class="text-[10px] text-slate-500 font-sans">Currently browsing subjects of Semester {selectedSem} in <span class="text-indigo-400 font-semibold">{selectedBranch.name}</span>.</p>
                 </div>
-                <form onSubmit={handleAddSubject} class="flex flex-wrap items-center gap-2 sm:max-w-md w-full">
+                <form onSubmit={handleAddSubject} class="flex items-center gap-2 sm:max-w-md w-full">
                   <input
                     type="text"
                     required
                     value={newSubject.name}
-                    onChange={e => setNewSubject({ ...newSubject, name: e.target.value, universityId: String(selectedUni.id), branchId: String(selectedBranch.id) })}
+                    onChange={e => setNewSubject({ ...newSubject, name: e.target.value, universityId: String(selectedUni.id), branchId: String(selectedBranch.id), semester: selectedSem })}
                     placeholder="Subject Name"
-                    class="flex-1 text-xs bg-slate-900 border border-slate-700 rounded-lg px-3 py-2 text-white outline-none focus:border-blue-500 min-w-[150px] font-sans"
+                    class="flex-1 text-xs bg-slate-900 border border-slate-700 rounded-lg px-3 py-2 text-white outline-none focus:border-blue-500 font-sans"
                   />
-                  <select
-                    required
-                    value={newSubject.semester}
-                    onChange={e => setNewSubject({ ...newSubject, semester: Number(e.target.value) })}
-                    class="text-xs bg-slate-900 border border-slate-700 rounded-lg p-2 text-slate-300 outline-none font-sans"
-                  >
-                    {[1, 2, 3, 4, 5, 6, 7, 8].map(s => <option key={s} value={s}>Sem {s}</option>)}
-                  </select>
                   <button type="submit" class="bg-indigo-600 hover:bg-indigo-500 text-white rounded-lg p-2 cursor-pointer transition shrink-0" title="Map Subject"><Plus size={14} /></button>
                 </form>
               </div>
 
               <div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
                 {(() => {
-                  const branchSubjects = subjects.filter(s => (!s.university || s.university.id === selectedUni.id) && s.branch?.id === selectedBranch.id);
+                  const branchSubjects = subjects.filter(s => 
+                    (!s.university || s.university.id === selectedUni.id) && 
+                    s.branch?.id === selectedBranch.id && 
+                    s.semester === selectedSem
+                  );
                   if (branchSubjects.length === 0) {
                     return (
                       <div class="col-span-full glass-panel border border-white/5 rounded-xl p-8 text-center text-slate-500 text-xs font-sans">
-                        No subjects mapped under this branch yet.
+                        No subjects mapped under this semester yet.
                       </div>
                     );
                   }
@@ -862,7 +908,7 @@ export default function AdminDashboard() {
                       <div class="absolute -right-6 -bottom-6 w-16 h-16 bg-indigo-500/5 rounded-full group-hover:scale-150 transition-all duration-300"></div>
                       <div class="min-w-0 relative z-10 text-left pr-2 font-sans">
                         <span class="text-xs font-bold text-slate-300 group-hover:text-white truncate block">{s.name}</span>
-                        <span class="text-[9px] text-slate-500 block mt-0.5">Semester {s.semester}</span>
+                        <span class="text-[9px] text-slate-500 block mt-0.5 font-sans">Semester {s.semester}</span>
                       </div>
                       <button 
                         onClick={(e) => {
@@ -881,8 +927,8 @@ export default function AdminDashboard() {
             </div>
           )}
 
-          {/* Step 4: Uploaded Materials List */}
-          {selectedUni && selectedBranch && selectedSubject && (
+          {/* Step 5: Uploaded Materials List */}
+          {selectedUni && selectedBranch && selectedSem && selectedSubject && (
             <div class="space-y-6">
               <div class="bg-slate-900/20 border border-white/5 p-4 rounded-2xl">
                 <h4 class="font-display font-extrabold text-white text-base">Uploaded Materials</h4>
