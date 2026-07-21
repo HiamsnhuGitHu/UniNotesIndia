@@ -41,8 +41,8 @@ export default function AdminDashboard() {
 
   // Add Directory Forms
   const [newUni, setNewUni] = useState({ name: '', city: 'Jaipur' });
-  const [newBranch, setNewBranch] = useState({ name: '' });
-  const [newSubject, setNewSubject] = useState({ name: '', branchId: '', semester: 1 });
+  const [newBranch, setNewBranch] = useState({ name: '', universityId: '' });
+  const [newSubject, setNewSubject] = useState({ name: '', branchId: '', semester: 1, universityId: '' });
 
   // Notifications status alert
   const [alert, setAlert] = useState({ type: '', text: '' });
@@ -244,10 +244,14 @@ export default function AdminDashboard() {
 
   const handleAddBranch = async (e) => {
     e.preventDefault();
-    if (!newBranch.name.trim()) return;
+    if (!newBranch.name.trim() || !newBranch.universityId) return;
     try {
-      await api.post('/api/admin/branches', newBranch);
-      setNewBranch({ name: '' });
+      const selectedUni = universities.find(u => u.id === Number(newBranch.universityId));
+      await api.post('/api/admin/branches', {
+        name: newBranch.name,
+        university: selectedUni
+      });
+      setNewBranch({ name: '', universityId: '' });
       showAlert('success', 'Branch added.');
       fetchDirectories();
     } catch (err) {
@@ -269,15 +273,17 @@ export default function AdminDashboard() {
 
   const handleAddSubject = async (e) => {
     e.preventDefault();
-    if (!newSubject.name.trim() || !newSubject.branchId) return;
+    if (!newSubject.name.trim() || !newSubject.branchId || !newSubject.universityId) return;
     try {
       const selectedBranch = branches.find(b => b.id === Number(newSubject.branchId));
+      const selectedUni = universities.find(u => u.id === Number(newSubject.universityId));
       await api.post('/api/admin/subjects', {
         name: newSubject.name,
         branch: selectedBranch,
-        semester: newSubject.semester
+        semester: newSubject.semester,
+        university: selectedUni
       });
-      setNewSubject({ name: '', branchId: '', semester: 1 });
+      setNewSubject({ name: '', branchId: '', semester: 1, universityId: '' });
       showAlert('success', 'Subject mapping registered.');
       fetchDirectories();
     } catch (err) {
@@ -571,34 +577,58 @@ export default function AdminDashboard() {
               <button type="submit" class="bg-blue-600 hover:bg-blue-500 text-white rounded-lg p-2 cursor-pointer transition"><Plus size={14} /></button>
             </form>
             <div class="max-h-64 overflow-y-auto space-y-2 pr-2">
-              {universities.map(u => (
-                <div key={u.id} class="flex items-center justify-between bg-slate-900/40 p-2.5 rounded-lg border border-white/5">
-                  <span class="text-xs text-slate-300 font-medium truncate max-w-[150px]">{u.name}</span>
-                  <button onClick={() => handleDeleteUni(u.id)} class="text-slate-500 hover:text-rose-400 cursor-pointer transition"><Trash2 size={13} /></button>
-                </div>
-              ))}
+              {(() => {
+                const filteredUnis = universities.filter(u =>
+                  u.name.toLowerCase().includes((newUni.name || '').toLowerCase())
+                );
+                if (newUni.name && filteredUnis.length === 0) {
+                  return <div class="text-xs text-slate-500 text-center py-4">Not Found</div>;
+                }
+                return filteredUnis.map(u => (
+                  <div key={u.id} class="flex items-center justify-between bg-slate-900/40 p-2.5 rounded-lg border border-white/5">
+                    <span class="text-xs text-slate-300 font-medium truncate max-w-[150px]">{u.name}</span>
+                    <button onClick={() => handleDeleteUni(u.id)} class="text-slate-500 hover:text-rose-400 cursor-pointer transition"><Trash2 size={13} /></button>
+                  </div>
+                ));
+              })()}
             </div>
           </div>
 
           {/* Branches Setup */}
           <div class="space-y-4">
             <h4 class="font-display font-bold text-white text-sm">Branches</h4>
-            <form onSubmit={handleAddBranch} class="flex gap-2">
-              <input
-                type="text"
+            <form onSubmit={handleAddBranch} class="space-y-2">
+              <select
                 required
-                value={newBranch.name}
-                onChange={e => setNewBranch({ name: e.target.value })}
-                placeholder="Branch Name"
-                class="flex-1 text-xs bg-slate-900 border border-slate-700 rounded-lg px-3 py-2 text-white outline-none focus:border-blue-500"
-              />
-              <button type="submit" class="bg-purple-600 hover:bg-purple-500 text-white rounded-lg p-2 cursor-pointer transition"><Plus size={14} /></button>
+                value={newBranch.universityId}
+                onChange={e => setNewBranch({ ...newBranch, universityId: e.target.value })}
+                class="w-full text-xs bg-slate-900 border border-slate-700 rounded-lg p-2 text-slate-300 outline-none"
+              >
+                <option value="">Select University</option>
+                {universities.map(u => <option key={u.id} value={u.id}>{u.name}</option>)}
+              </select>
+              <div class="flex gap-2">
+                <input
+                  type="text"
+                  required
+                  value={newBranch.name}
+                  onChange={e => setNewBranch({ ...newBranch, name: e.target.value })}
+                  placeholder="Branch Name"
+                  class="flex-1 text-xs bg-slate-900 border border-slate-700 rounded-lg px-3 py-2 text-white outline-none focus:border-blue-500"
+                />
+                <button type="submit" class="bg-purple-600 hover:bg-purple-500 text-white rounded-lg p-2 cursor-pointer transition"><Plus size={14} /></button>
+              </div>
             </form>
             <div class="max-h-64 overflow-y-auto space-y-2 pr-2">
               {branches.map(b => (
                 <div key={b.id} class="flex items-center justify-between bg-slate-900/40 p-2.5 rounded-lg border border-white/5">
-                  <span class="text-xs text-slate-300 font-medium truncate max-w-[150px]">{b.name}</span>
-                  <button onClick={() => handleDeleteBranch(b.id)} class="text-slate-500 hover:text-rose-400 cursor-pointer transition"><Trash2 size={13} /></button>
+                  <div class="min-w-0">
+                    <span class="text-xs text-slate-300 font-medium truncate block max-w-[150px]">{b.name}</span>
+                    {b.university && (
+                      <span class="text-[9px] text-slate-500 block truncate max-w-[150px]">{b.university.name}</span>
+                    )}
+                  </div>
+                  <button onClick={() => handleDeleteBranch(b.id)} class="text-slate-500 hover:text-rose-400 cursor-pointer transition shrink-0"><Trash2 size={13} /></button>
                 </div>
               ))}
             </div>
@@ -608,6 +638,15 @@ export default function AdminDashboard() {
           <div class="space-y-4">
             <h4 class="font-display font-bold text-white text-sm">Subjects mapping</h4>
             <form onSubmit={handleAddSubject} class="space-y-2.5 bg-slate-900/20 border border-white/5 p-3 rounded-xl">
+              <select
+                required
+                value={newSubject.universityId}
+                onChange={e => setNewSubject({ ...newSubject, universityId: e.target.value })}
+                class="w-full text-xs bg-slate-900 border border-slate-700 rounded-lg p-2 text-slate-300 outline-none"
+              >
+                <option value="">Select University</option>
+                {universities.map(u => <option key={u.id} value={u.id}>{u.name}</option>)}
+              </select>
               <input
                 type="text"
                 required
@@ -644,7 +683,10 @@ export default function AdminDashboard() {
                 <div key={s.id} class="flex items-center justify-between bg-slate-900/40 p-2.5 rounded-lg border border-white/5">
                   <div class="min-w-0">
                     <span class="text-xs text-slate-300 font-medium truncate block max-w-[150px]">{s.name}</span>
-                    <span class="text-[9px] text-slate-500 block">{s.branch?.name} • Sem {s.semester}</span>
+                    <span class="text-[9px] text-slate-500 block truncate max-w-[150px]">
+                      {s.branch?.name} • Sem {s.semester}
+                      {s.university && ` • ${s.university.name}`}
+                    </span>
                   </div>
                   <button onClick={() => handleDeleteSubject(s.id)} class="text-slate-500 hover:text-rose-400 cursor-pointer transition shrink-0"><Trash2 size={13} /></button>
                 </div>

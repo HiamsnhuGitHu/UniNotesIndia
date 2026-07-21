@@ -16,14 +16,18 @@ public class Subject {
 
     private Integer semester;
 
+    @DBRef
+    private University university;
+
     public Subject() {
     }
 
-    public Subject(Long id, String name, Branch branch, Integer semester) {
+    public Subject(Long id, String name, Branch branch, Integer semester, University university) {
         this.id = id;
         this.name = name;
         this.branch = branch;
         this.semester = semester;
+        this.university = university;
     }
 
     public Long getId() {
@@ -56,5 +60,13 @@ public class Subject {
 
     public void setSemester(Integer semester) {
         this.semester = semester;
+    }
+
+    public University getUniversity() {
+        return university;
+    }
+
+    public void setUniversity(University university) {
+        this.university = university;
     }
 }
