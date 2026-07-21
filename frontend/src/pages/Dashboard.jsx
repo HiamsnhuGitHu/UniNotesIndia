@@ -1,13 +1,11 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import api from '../services/api';
-import { Search, BookOpen, Upload, HelpCircle, GraduationCap, ChevronLeft, ChevronRight, MessageSquare, BookOpenText } from 'lucide-react';
+import { Search, BookOpen, Upload, HelpCircle, GraduationCap, MessageSquare, BookOpenText } from 'lucide-react';
 
 export default function Dashboard() {
   const navigate = useNavigate();
   const [universities, setUniversities] = useState([]);
-  const [notifications, setNotifications] = useState([]);
-  const [activeSlide, setActiveSlide] = useState(0);
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedUni, setSelectedUni] = useState('');
   
@@ -21,14 +19,9 @@ export default function Dashboard() {
   useEffect(() => {
     const fetchData = async () => {
       try {
-        const [uniRes, notifRes] = await Promise.all([
-          api.get('/api/universities'),
-          api.get('/api/notifications')
-        ]);
+        const uniRes = await api.get('/api/universities');
         setUniversities(uniRes.data);
-        setNotifications(notifRes.data);
         
-        // Mock static counts or compute from data
         setStats({
           universities: uniRes.data.length,
           notes: 124, // Mock total notes count
@@ -41,26 +34,9 @@ export default function Dashboard() {
     fetchData();
   }, []);
 
-  // Auto scroll notification carousel
-  useEffect(() => {
-    if (notifications.length <= 1) return;
-    const interval = setInterval(() => {
-      setActiveSlide((prev) => (prev + 1) % notifications.length);
-    }, 5000);
-    return () => clearInterval(interval);
-  }, [notifications]);
-
   const handleSearchSubmit = (e) => {
     e.preventDefault();
     navigate('/browse', { state: { universityId: selectedUni, query: searchQuery } });
-  };
-
-  const nextSlide = () => {
-    setActiveSlide((prev) => (prev + 1) % notifications.length);
-  };
-
-  const prevSlide = () => {
-    setActiveSlide((prev) => (prev - 1 + notifications.length) % notifications.length);
   };
 
   return (
@@ -121,49 +97,6 @@ export default function Dashboard() {
         </div>
       </div>
 
-      {/* Notifications Carousel Panel */}
-      {notifications.length > 0 && (
-        <div class="glass-panel border border-white/10 rounded-2xl p-6 relative overflow-hidden shadow-lg">
-          <h3 class="text-xs font-semibold text-slate-400 uppercase tracking-widest mb-4 flex items-center gap-2">
-            <span class="h-2 w-2 rounded-full bg-purple-500 animate-ping"></span>
-            <span>Platform Announcements</span>
-          </h3>
-
-          <div class="relative h-20 flex items-center justify-center">
-            {notifications.map((n, idx) => (
-              <div
-                key={n.id}
-                class={`absolute inset-0 flex flex-col justify-center transition-all duration-500 transform ${
-                  idx === activeSlide
-                    ? 'opacity-100 translate-x-0 scale-100 pointer-events-auto'
-                    : 'opacity-0 translate-x-12 scale-95 pointer-events-none'
-                }`}
-              >
-                <h4 class="font-display font-bold text-white text-base truncate">{n.title}</h4>
-                <p class="text-xs text-slate-300 mt-1.5 line-clamp-2 leading-relaxed">{n.message}</p>
-              </div>
-            ))}
-          </div>
-
-          {/* Carousel Arrows */}
-          {notifications.length > 1 && (
-            <div class="flex justify-end gap-2 mt-2">
-              <button
-                onClick={prevSlide}
-                class="p-1.5 rounded-lg border border-slate-700/60 bg-slate-900/60 text-slate-400 hover:text-white cursor-pointer hover:border-slate-500 transition duration-300"
-              >
-                <ChevronLeft size={14} />
-              </button>
-              <button
-                onClick={nextSlide}
-                class="p-1.5 rounded-lg border border-slate-700/60 bg-slate-900/60 text-slate-400 hover:text-white cursor-pointer hover:border-slate-500 transition duration-300"
-              >
-                <ChevronRight size={14} />
-              </button>
-            </div>
-          )}
-        </div>
-      )}
 
       {/* Quick Action Navigation Grid */}
       <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
