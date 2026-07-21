@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { Link, useNavigate, useLocation } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import api from '../services/api';
-import { BookOpen, User, LogOut, LayoutDashboard, FileText, HelpCircle, ShieldAlert, Menu, X, Bell, AlertCircle, Plus, Send, Trash2 } from 'lucide-react';
+import { BookOpen, User, LogOut, LayoutDashboard, FileText, HelpCircle, ShieldAlert, Menu, X, Bell, AlertCircle, Plus, Send, Trash2, Mail } from 'lucide-react';
 
 const Navbar = () => {
   const { user, logout, isAuthenticated } = useAuth();
@@ -19,6 +19,7 @@ const Navbar = () => {
   });
 
   const [showCreateNotifModal, setShowCreateNotifModal] = useState(false);
+  const [showContactModal, setShowContactModal] = useState(false);
   const [newNotifTitle, setNewNotifTitle] = useState('');
   const [newNotifMessage, setNewNotifMessage] = useState('');
   const [sendingNotif, setSendingNotif] = useState(false);
@@ -274,17 +275,19 @@ const Navbar = () => {
                     <User size={13} className="text-slate-400" />
                     <span>My Profile</span>
                   </Link>
-                  <a
-                    href="mailto:uninotesindia@gmail.com"
-                    onClick={() => setProfileDropdownOpen(false)}
-                    class="flex items-center gap-2 px-4 py-2.5 text-xs font-semibold text-slate-300 hover:text-white hover:bg-slate-900 transition border-t border-white/5"
+                  <button
+                    onClick={() => {
+                      setShowContactModal(true);
+                      setProfileDropdownOpen(false);
+                    }}
+                    class="w-full flex items-center gap-2 px-4 py-2.5 text-xs font-semibold text-slate-300 hover:text-white hover:bg-slate-900 transition border-t border-white/5 cursor-pointer text-left outline-none"
                   >
                     <HelpCircle size={13} className="text-slate-400" />
                     <div class="flex flex-col text-left">
                       <span>Contact Admin</span>
                       <span class="text-[9px] text-slate-500 font-mono mt-0.5">uninotesindia@gmail.com</span>
                     </div>
-                  </a>
+                  </button>
                 </div>
               )}
             </div>
@@ -408,6 +411,45 @@ const Navbar = () => {
                 </button>
               </div>
             </form>
+          </div>
+        </div>
+      )}
+
+      {/* Contact Admin Support Modal */}
+      {showContactModal && (
+        <div class="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/80 backdrop-blur-sm p-4">
+          <div class="w-full max-w-md glass-panel rounded-2xl border border-white/10 p-6 space-y-4 shadow-2xl relative overflow-hidden text-left font-sans">
+            <div class="absolute -top-24 -left-24 w-48 h-48 bg-blue-500/10 rounded-full blur-3xl"></div>
+
+            <div class="flex items-center gap-3 relative z-10">
+              <div class="flex items-center justify-center h-10 w-10 rounded-full bg-blue-600/20 text-blue-400 border border-blue-500/30">
+                <HelpCircle className="h-5 w-5" />
+              </div>
+              <h3 class="font-display font-extrabold text-white text-lg">Contact Admin</h3>
+            </div>
+
+            <p class="text-xs text-slate-400 leading-normal relative z-10">
+              To request content removal, report issues, or resolve account errors, please send an email directly to the platform administrator:
+            </p>
+
+            <div class="flex items-center gap-3 bg-slate-900/40 p-4 rounded-xl border border-white/5 relative z-10">
+              <Mail className="h-4 w-4 text-blue-400 shrink-0" />
+              <div>
+                <p class="text-[9px] text-slate-500 font-semibold uppercase tracking-wider">Support Email Address</p>
+                <a href="mailto:uninotesindia@gmail.com" class="text-xs font-bold text-white hover:text-blue-400 transition mt-0.5 block">
+                  uninotesindia@gmail.com
+                </a>
+              </div>
+            </div>
+
+            <div class="flex justify-end pt-2 relative z-10">
+              <button
+                onClick={() => setShowContactModal(false)}
+                class="px-4 py-2 bg-blue-600 hover:bg-blue-500 text-xs font-semibold text-white rounded-xl cursor-pointer transition border border-white/5"
+              >
+                Close
+              </button>
+            </div>
           </div>
         </div>
       )}
