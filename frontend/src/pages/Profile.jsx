@@ -124,9 +124,6 @@ export default function Profile() {
               <h2 class="font-display font-extrabold text-white text-2xl">
                 {isEditing ? formData.fullName || 'User Profile' : user?.fullName}
               </h2>
-              <p class="text-xs text-slate-400 font-mono">
-                @{isEditing ? formData.username : user?.username} ({isEditing ? formData.role?.replace('ROLE_', '') : user?.role?.replace('ROLE_', '')})
-              </p>
             </div>
           </div>
 
