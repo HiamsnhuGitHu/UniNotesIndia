@@ -14,7 +14,7 @@ import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
-
+import com.uninotes.india.service.UserHistoryService;
 @RestController
 public class AdminController {
 
@@ -60,6 +60,9 @@ public class AdminController {
     @Autowired
     private PasswordEncoder passwordEncoder;
 
+    @Autowired
+    private UserHistoryService userHistoryService;
+
     // Statistics
     @GetMapping("/api/admin/stats")
     public ResponseEntity<AdminStatsDto> getStats() {
@@ -96,6 +99,17 @@ public class AdminController {
         } else {
             // Update all student details
             return userRepository.findById(userDetails.getId()).map(user -> {
+                // Snapshot the old details before updating
+                com.uninotes.india.entity.User oldUserCopy = new com.uninotes.india.entity.User();
+                oldUserCopy.setId(user.getId());
+                oldUserCopy.setFullName(user.getFullName());
+                oldUserCopy.setUsername(user.getUsername());
+                oldUserCopy.setRole(user.getRole());
+                oldUserCopy.setEmail(user.getEmail());
+                oldUserCopy.setMobileNumber(user.getMobileNumber());
+                oldUserCopy.setCollegeName(user.getCollegeName());
+                oldUserCopy.setCity(user.getCity());
+
                 if (!user.getUsername().equals(userDetails.getUsername())) {
                     if (userRepository.findByUsername(userDetails.getUsername()).isPresent()) {
                         throw new RuntimeException("Username already taken");
@@ -121,9 +135,28 @@ public class AdminController {
                     user.setPassword(passwordEncoder.encode(userDetails.getPassword()));
                 }
 
-                return ResponseEntity.ok(userRepository.save(user));
+                User savedUser = userRepository.save(user);
+
+                // Get logged in user username
+                Object principal = SecurityContextHolder.getContext().getAuthentication().getPrincipal();
+                String adminUsername = "ADMIN";
+                if (principal instanceof org.springframework.security.core.userdetails.UserDetails) {
+                    adminUsername = ((org.springframework.security.core.userdetails.UserDetails) principal).getUsername();
+                } else if (principal instanceof User) {
+                    adminUsername = ((User) principal).getUsername();
+                }
+
+                // Log the field-level updates to the history logs collection
+                userHistoryService.logAllChanges(oldUserCopy, savedUser, adminUsername);
+
+                return ResponseEntity.ok(savedUser);
             }).orElseThrow(() -> new RuntimeException("User not found"));
         }
+    }
+
+    @GetMapping("/api/admin/users/{id}/history")
+    public ResponseEntity<?> getUserHistory(@PathVariable Long id) {
+        return ResponseEntity.ok(userHistoryService.getHistory(id));
     }
 
     @PutMapping("/api/admin/users/{id}/toggle-status")

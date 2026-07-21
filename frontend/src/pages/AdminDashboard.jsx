@@ -86,6 +86,12 @@ export default function AdminDashboard() {
     password: ''
   });
 
+  // History log modal states
+  const [showHistoryModal, setShowHistoryModal] = useState(false);
+  const [historyUser, setHistoryUser] = useState(null);
+  const [userHistoryLogs, setUserHistoryLogs] = useState([]);
+  const [loadingHistory, setLoadingHistory] = useState(false);
+
   const startEditingUser = (u) => {
     setEditingUser(u);
     setEditForm({
@@ -98,6 +104,21 @@ export default function AdminDashboard() {
       role: u.role || 'ROLE_STUDENT',
       password: ''
     });
+  };
+
+  const fetchAndShowHistory = async (targetUser) => {
+    setHistoryUser(targetUser);
+    setUserHistoryLogs([]);
+    setLoadingHistory(true);
+    setShowHistoryModal(true);
+    try {
+      const res = await api.get(`/api/admin/users/${targetUser.id}/history`);
+      setUserHistoryLogs(res.data);
+    } catch (err) {
+      showAlert('error', 'Failed to fetch user history.');
+    } finally {
+      setLoadingHistory(false);
+    }
   };
 
   const startAddingUser = () => {
@@ -899,6 +920,7 @@ export default function AdminDashboard() {
                   <th class="p-3">Email</th>
                   <th class="p-3">Role</th>
                   <th class="p-3">Status</th>
+                  <th class="p-3">History</th>
                   <th class="p-3 text-right">Actions</th>
                 </tr>
               </thead>
@@ -912,6 +934,14 @@ export default function AdminDashboard() {
                       <span class={`px-2 py-0.5 rounded text-[10px] font-semibold ${u.enabled ? 'bg-emerald-500/15 text-emerald-400' : 'bg-rose-500/15 text-rose-400'}`}>
                         {u.enabled ? 'Active' : 'Suspended'}
                       </span>
+                    </td>
+                    <td class="p-3">
+                      <button
+                        onClick={() => fetchAndShowHistory(u)}
+                        class="px-2 py-1 bg-slate-800 hover:bg-slate-700 text-slate-300 hover:text-white rounded-lg text-[10px] font-semibold cursor-pointer transition border border-white/5"
+                      >
+                        Show
+                      </button>
                     </td>
                     <td class="p-3 text-right flex justify-end gap-2">
                       <button
@@ -1800,6 +1830,83 @@ export default function AdminDashboard() {
                 </button>
               </div>
             </form>
+          </div>
+        </div>
+      )}
+
+      {/* User Edit History Modal */}
+      {showHistoryModal && historyUser && (
+        <div class="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/80 backdrop-blur-sm p-4">
+          <div class="w-full max-w-lg glass-panel rounded-2xl border border-white/10 p-6 space-y-4 shadow-2xl relative overflow-hidden text-left font-sans flex flex-col max-h-[85vh]">
+            <div class="absolute -top-24 -left-24 w-48 h-48 bg-blue-500/10 rounded-full blur-3xl"></div>
+
+            <div class="flex items-center justify-between border-b border-white/5 pb-3 relative z-10 shrink-0">
+              <div>
+                <h3 class="font-display font-extrabold text-white text-lg">Profile History</h3>
+                <p class="text-[10px] text-slate-400 font-mono mt-0.5">
+                  User: {historyUser.fullName} (@{historyUser.username})
+                </p>
+              </div>
+              <button
+                onClick={() => setShowHistoryModal(false)}
+                class="p-1.5 hover:bg-slate-800 text-slate-400 hover:text-white rounded-lg transition cursor-pointer"
+              >
+                <X size={16} />
+              </button>
+            </div>
+
+            <div class="overflow-y-auto flex-1 space-y-4 pr-1 relative z-10 custom-scrollbar py-2">
+              {loadingHistory ? (
+                <div class="flex flex-col items-center justify-center py-12 space-y-3">
+                  <div class="h-8 w-8 border-2 border-blue-500/20 border-t-blue-500 rounded-full animate-spin"></div>
+                  <span class="text-xs text-slate-400 font-semibold">Fetching logs...</span>
+                </div>
+              ) : userHistoryLogs.length === 0 ? (
+                <div class="text-center text-xs text-slate-500 py-12">
+                  No profile update logs recorded for this user yet.
+                </div>
+              ) : (
+                <div class="space-y-4">
+                  {userHistoryLogs.map((log) => (
+                    <div key={log.id} class="space-y-1.5">
+                      <div class="flex items-center justify-between text-[10px] text-slate-500 font-mono px-1">
+                        <span>Updated by: <span class="text-slate-300 font-semibold font-mono">@{log.changedBy}</span></span>
+                        <span>{new Date(log.timestamp).toLocaleString()}</span>
+                      </div>
+                      <div class="bg-slate-900/40 border border-white/5 rounded-xl p-3 text-xs space-y-2 text-left">
+                        <div class="font-bold text-slate-300 flex items-center gap-1.5 font-display">
+                          <span class="h-1.5 w-1.5 rounded-full bg-blue-500"></span>
+                          <span>{log.fieldName}</span>
+                        </div>
+                        <div class="grid grid-cols-2 gap-3 font-sans">
+                          <div class="bg-slate-950/40 p-2 rounded-lg border border-white/5 min-w-0">
+                            <span class="text-[9px] text-slate-500 uppercase block font-semibold">Previous</span>
+                            <span class="text-rose-400/90 line-through truncate block mt-0.5" title={log.oldValue}>
+                              {log.oldValue || 'N/A'}
+                            </span>
+                          </div>
+                          <div class="bg-slate-950/40 p-2 rounded-lg border border-white/5 min-w-0">
+                            <span class="text-[9px] text-slate-500 uppercase block font-semibold">Updated</span>
+                            <span class="text-emerald-400 font-semibold truncate block mt-0.5" title={log.newValue}>
+                              {log.newValue || 'N/A'}
+                            </span>
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
+
+            <div class="flex justify-end pt-3 border-t border-white/5 relative z-10 shrink-0">
+              <button
+                onClick={() => setShowHistoryModal(false)}
+                class="px-4 py-2 bg-blue-600 hover:bg-blue-500 text-white rounded-xl cursor-pointer transition border border-white/5"
+              >
+                Close
+              </button>
+            </div>
           </div>
         </div>
       )}

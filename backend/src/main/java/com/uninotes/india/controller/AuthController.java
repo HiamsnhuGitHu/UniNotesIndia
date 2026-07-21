@@ -2,6 +2,7 @@ package com.uninotes.india.controller;
 
 import com.uninotes.india.dto.*;
 import com.uninotes.india.service.AuthService;
+import com.uninotes.india.service.UserHistoryService;
 import com.uninotes.india.repository.UserRepository;
 import jakarta.validation.Valid;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -22,6 +23,9 @@ public class AuthController {
 
     @Autowired
     private UserRepository userRepository;
+
+    @Autowired
+    private UserHistoryService userHistoryService;
 
     @GetMapping("/me")
     public ResponseEntity<?> getMe() {
@@ -82,6 +86,17 @@ public class AuthController {
         }
         com.uninotes.india.entity.User user = (com.uninotes.india.entity.User) principal;
 
+        // Take a snapshot of the old user details before updating
+        com.uninotes.india.entity.User oldUserCopy = new com.uninotes.india.entity.User();
+        oldUserCopy.setId(user.getId());
+        oldUserCopy.setFullName(user.getFullName());
+        oldUserCopy.setUsername(user.getUsername());
+        oldUserCopy.setRole(user.getRole());
+        oldUserCopy.setEmail(user.getEmail());
+        oldUserCopy.setMobileNumber(user.getMobileNumber());
+        oldUserCopy.setCollegeName(user.getCollegeName());
+        oldUserCopy.setCity(user.getCity());
+
         // Verify if username is changed and if it is taken
         if (profileDetails.getUsername() != null && !profileDetails.getUsername().trim().isEmpty() && !user.getUsername().equals(profileDetails.getUsername())) {
             // Students/Subadmins cannot change username!
@@ -133,6 +148,10 @@ public class AuthController {
 
         user.setUpdatedAt(java.time.LocalDateTime.now());
         com.uninotes.india.entity.User savedUser = userRepository.save(user);
+
+        // Log the field-level updates to the history logs collection
+        userHistoryService.logAllChanges(oldUserCopy, savedUser, savedUser.getUsername());
+
         return ResponseEntity.ok(authService.convertToDto(savedUser));
     }
 }
