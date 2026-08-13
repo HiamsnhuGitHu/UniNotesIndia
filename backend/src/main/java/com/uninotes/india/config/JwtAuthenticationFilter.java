@@ -42,7 +42,8 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
                 });
             }
         } catch (Exception ex) {
-            // fail-silent security logic
+            // Log unexpected errors during authentication filter processing for easier debugging
+            org.slf4j.LoggerFactory.getLogger(JwtAuthenticationFilter.class).error("Failed to set user authentication in security context", ex);
         }
 
         filterChain.doFilter(request, response);

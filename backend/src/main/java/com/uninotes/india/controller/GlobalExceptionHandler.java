@@ -39,15 +39,19 @@ public class GlobalExceptionHandler {
 
     @ExceptionHandler(RuntimeException.class)
     public ResponseEntity<Map<String, String>> handleRuntimeException(RuntimeException ex) {
+        // Log the runtime exception for debugging (avoid exposing internals to clients)
+        org.slf4j.LoggerFactory.getLogger(GlobalExceptionHandler.class).error("Runtime exception handled", ex);
         Map<String, String> body = new HashMap<>();
-        body.put("error", ex.getMessage());
+        body.put("error", ex.getMessage() != null ? ex.getMessage() : "An error occurred");
         return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(body);
     }
 
     @ExceptionHandler(Exception.class)
     public ResponseEntity<Map<String, String>> handleGenericException(Exception ex) {
+        // Log full exception for diagnostics and return a safe message to clients
+        org.slf4j.LoggerFactory.getLogger(GlobalExceptionHandler.class).error("Unhandled exception", ex);
         Map<String, String> body = new HashMap<>();
-        body.put("error", ex.getMessage());
+        body.put("error", "Internal server error");
         return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(body);
     }
 }

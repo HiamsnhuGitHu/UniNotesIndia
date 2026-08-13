@@ -13,9 +13,17 @@ import java.util.Date;
 @Component
 public class JwtTokenProvider {
 
-    private final String jwtSecret = "UniNotesIndiaSuperSecretJwtSecretKeyMustBeAtLeast256BitsLongForHS256Algorithm";
-    private final Key key = Keys.hmacShaKeyFor(jwtSecret.getBytes(StandardCharsets.UTF_8));
+    @org.springframework.beans.factory.annotation.Value("${app.jwt.secret:UniNotesDefaultChangeMeDontUseInProd}")
+    private String jwtSecret;
+
+    private Key key;
+
     private final long jwtExpirationInMs = 86400000; // 24 hours
+
+    @jakarta.annotation.PostConstruct
+    public void init() {
+        key = Keys.hmacShaKeyFor(jwtSecret.getBytes(StandardCharsets.UTF_8));
+    }
 
     public String generateToken(String username, String role) {
         Claims claims = Jwts.claims().setSubject(username);

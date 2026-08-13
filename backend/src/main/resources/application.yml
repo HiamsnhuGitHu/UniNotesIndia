@@ -17,5 +17,7 @@ spring:
       max-request-size: 250MB
 
 app:
+  jwt:
+    secret: ${APP_JWT_SECRET:UniNotesDefaultChangeMeDontUseInProd}
   upload:
     dir: ${APP_UPLOAD_DIR:uploads}

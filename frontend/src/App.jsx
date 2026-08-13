@@ -1,4 +1,4 @@
-import React, { Suspense, lazy } from 'react';
+﻿import React, { Suspense, lazy } from 'react';
 import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
 import { AuthProvider, useAuth } from './context/AuthContext';
 import Navbar from './components/Navbar';
@@ -44,12 +44,12 @@ const PublicRoute = ({ children }) => {
 
 function AppRoutes() {
   return (
-    <div class="min-h-screen bg-radial-grid bg-slate-950 text-slate-100 flex flex-col font-sans">
+    <div className="min-h-screen bg-radial-grid bg-slate-950 text-slate-100 flex flex-col font-sans">
       <Navbar />
-      <main class="flex-1 w-full max-w-7xl mx-auto px-4 py-8 sm:px-6 lg:px-8">
+      <main className="flex-1 w-full max-w-7xl mx-auto px-4 py-8 sm:px-6 lg:px-8">
         <Suspense fallback={
-          <div class="flex items-center justify-center min-h-[50vh]">
-            <div class="h-8 w-8 border-4 border-blue-500/20 border-t-blue-500 rounded-full animate-spin"></div>
+          <div className="flex items-center justify-center min-h-[50vh]">
+            <div className="h-8 w-8 border-4 border-blue-500/20 border-t-blue-500 rounded-full animate-spin"></div>
           </div>
         }>
           <Routes>
@@ -95,3 +95,4 @@ export default function App() {
     </BrowserRouter>
   );
 }
+
