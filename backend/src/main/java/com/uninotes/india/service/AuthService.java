@@ -29,7 +29,14 @@ public class AuthService {
     private JwtTokenProvider tokenProvider;
 
     public UserDto register(RegisterRequest request) {
-        if (userRepository.findByUsernameIgnoreCase(request.getUsername()).isPresent()) {
+        String normalizedUsername = request.getUsername().trim();
+        if (normalizedUsername.isEmpty()) {
+            throw new RuntimeException("Username must not be empty");
+        }
+        // Normalize to lowercase for storage to make lookups deterministic and index-friendly
+        normalizedUsername = normalizedUsername.toLowerCase();
+
+        if (userRepository.findByUsername(normalizedUsername).isPresent()) {
             throw new RuntimeException("Username is already taken");
         }
         if (userRepository.findByEmail(request.getEmail()).isPresent()) {
@@ -46,7 +53,7 @@ public class AuthService {
         user.setEmail(request.getEmail());
         user.setCity(request.getCity());
         user.setCollegeName(request.getCollegeName());
-        user.setUsername(request.getUsername());
+        user.setUsername(normalizedUsername);
         user.setPassword(passwordEncoder.encode(request.getPassword()));
         user.setRole(UserRole.ROLE_STUDENT);
         user.setEnabled(false); // verification required
@@ -68,10 +75,34 @@ public class AuthService {
     }
 
     public AuthResponse login(LoginRequest request) {
-        User user = userRepository.findByUsernameIgnoreCase(request.getUsername())
-                .orElseThrow(() -> new RuntimeException("Invalid username or password"));
+        String usernameInput = request.getUsername() == null ? "" : request.getUsername().trim();
+        if (usernameInput.isEmpty()) {
+            throw new RuntimeException("Invalid username or password");
+        }
 
-        if (!passwordEncoder.matches(request.getPassword(), user.getPassword())) {
+        String lookupUsername = usernameInput;
+        long start = System.currentTimeMillis();
+
+        // Try exact lookup (fast, will use index if username stored normalized)
+        Optional<User> maybeUser = userRepository.findByUsername(lookupUsername);
+
+        // Fallback to case-insensitive search only if exact lookup failed
+        if (maybeUser.isEmpty()) {
+            maybeUser = userRepository.findByUsernameIgnoreCase(lookupUsername);
+        }
+
+        long afterLookup = System.currentTimeMillis();
+        org.slf4j.LoggerFactory.getLogger(AuthService.class).info("Login lookup took {} ms for username={}", (afterLookup - start), usernameInput);
+
+        User user = maybeUser.orElseThrow(() -> new RuntimeException("Invalid username or password"));
+
+        // Password matching (bcrypt) — log time for diagnostics
+        long pwStart = System.currentTimeMillis();
+        boolean matches = passwordEncoder.matches(request.getPassword(), user.getPassword());
+        long pwEnd = System.currentTimeMillis();
+        org.slf4j.LoggerFactory.getLogger(AuthService.class).info("Password match took {} ms for username={}", (pwEnd - pwStart), usernameInput);
+
+        if (!matches) {
             throw new RuntimeException("Invalid username or password");
         }
 
