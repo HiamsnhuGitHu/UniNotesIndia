@@ -146,5 +146,3 @@ Since MongoDB uses UUIDs or ObjectIds by default, a custom sequential auto-incre
 ## 🧪 7. Manual Verification Guidelines
 
 1. **Email Verification Backdoor**: When registering, you can verify your account by using the code `123456` on the verification screen instead of copying the UUID generated in the server logs.
-2. **Admin Credentials**: Use Username `admin`, Password `admin123` to log in as admin, moderate uploads, create directories, and dispatch announcements.
-3. **Student Credentials**: Use Username `student`, Password `password123` to log in as a student, browse, download, bookmark, and upload files.
